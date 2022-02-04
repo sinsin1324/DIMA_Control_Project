@@ -26,9 +26,9 @@ DEALINGS IN THE SOFTWARE.
 #ifndef PIN_DEFINITION_H
 #define PIN_DEFINITION_H
 
-#include "JetsonGPIO.h"
-#include "private/DictionaryLike.h"
-#include "private/PythonFunctions.h"
+#include "../JetsonGPIO.h"
+#include "DictionaryLike.h"
+#include "PythonFunctions.h"
 
 #include <stdexcept>
 #include <string>

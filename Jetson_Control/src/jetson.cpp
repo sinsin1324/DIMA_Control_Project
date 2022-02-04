@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include "../include/command_packet.h"
+#include "command_packet.h"
+#include "JetsonGPIO.h"
 
 #define NUM_THREADS 5
 #define Q_SIZE 30
@@ -55,6 +56,7 @@ static void *control(void *vargp){
 }
 
 int main(void) {
+    GPIO::setmode(GPIO::BCM);
     //initialise pointer to command queue
     command_qp = &command_queue[0];
     current_command = &command;

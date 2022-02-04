@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef GPIO_EVENT
 #define GPIO_EVENT
 
-#include "JetsonGPIO.h"
+#include "../JetsonGPIO.h"
 #include <map>
 #include <string>
 

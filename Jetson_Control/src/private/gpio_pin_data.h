@@ -32,8 +32,8 @@ DEALINGS IN THE SOFTWARE.
 #include <string>
 #include <vector>
 
-#include "JetsonGPIO.h"
-#include "private/Model.h"
+#include "../JetsonGPIO.h"
+#include "Model.h"
 
 namespace GPIO
 {
