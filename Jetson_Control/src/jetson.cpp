@@ -2,7 +2,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include "command_packet.h"
-#include "JetsonGPIO.h"
+#include "/usr/local/include/JetsonGPIO.h"
 
 #define NUM_THREADS 5
 #define Q_SIZE 30

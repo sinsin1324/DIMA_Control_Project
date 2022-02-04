@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/uct/DIMA/DIMA_Control_Project/Jetson_Control/src/command_packet.h
+stdio.h
+-
+stdint.h
+-
+
+/home/uct/DIMA/DIMA_Control_Project/Jetson_Control/src/jetson.cpp
+stdio.h
+-
+pthread.h
+-
+stdlib.h
+-
+command_packet.h
+/home/uct/DIMA/DIMA_Control_Project/Jetson_Control/src/command_packet.h
+/usr/local/include/JetsonGPIO.h
+-
+
+/usr/local/include/JetsonGPIO.h
+functional
+-
+memory
+-
+string
+-
+type_traits
+-
+JetsonGPIOConfig.h
+/usr/local/include/JetsonGPIOConfig.h
+
+/usr/local/include/JetsonGPIOConfig.h
+
