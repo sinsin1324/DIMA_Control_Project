@@ -5,7 +5,7 @@
 #include <chrono>
 #include <thread>
 #include "command_packet.h"
-#include "/usr/local/include/JetsonGPIO.h"
+#include "JetsonGPIO.h"
 
 #define NUM_THREADS 5
 #define Q_SIZE 30

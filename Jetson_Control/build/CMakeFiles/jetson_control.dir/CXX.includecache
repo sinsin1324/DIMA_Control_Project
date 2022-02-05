@@ -27,8 +27,8 @@ thread
 -
 command_packet.h
 /home/uct/DIMA/DIMA_Control_Project/Jetson_Control/src/command_packet.h
-/usr/local/include/JetsonGPIO.h
--
+JetsonGPIO.h
+/home/uct/DIMA/DIMA_Control_Project/Jetson_Control/src/JetsonGPIO.h
 
 /usr/local/include/JetsonGPIO.h
 functional
