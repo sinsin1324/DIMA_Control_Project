@@ -19,6 +19,12 @@ pthread.h
 -
 stdlib.h
 -
+unistd.h
+-
+chrono
+-
+thread
+-
 command_packet.h
 /home/uct/DIMA/DIMA_Control_Project/Jetson_Control/src/command_packet.h
 /usr/local/include/JetsonGPIO.h

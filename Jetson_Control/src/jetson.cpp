@@ -1,11 +1,16 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <chrono>
+#include <thread>
 #include "command_packet.h"
 #include "/usr/local/include/JetsonGPIO.h"
 
 #define NUM_THREADS 5
 #define Q_SIZE 30
+
+using namespace GPIO;
 
 int header = 0;
 struct packet *command_qp, *current_command, command, command_queue[Q_SIZE];
@@ -56,7 +61,7 @@ static void *control(void *vargp){
 }
 
 int main(void) {
-    GPIO::setmode(GPIO::BCM);
+    setmode(BCM);
     //initialise pointer to command queue
     command_qp = &command_queue[0];
     current_command = &command;
@@ -69,5 +74,15 @@ int main(void) {
     pthread_create(&tid[0], NULL, control, NULL);
     pthread_join(tid[0], NULL);
     load_command();
+    setup(26, OUT, LOW);
+    int t = 0;
+    while(t<50){
+ 	output(26, HIGH);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	output(26, LOW);
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	t++;
+    }
+    GPIO::cleanup();
     exit(0);
 }
