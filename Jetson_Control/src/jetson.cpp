@@ -45,8 +45,39 @@ static void load_command() {
 }
 
 static void execute_command() {
-    //hi
+    if (current_command->c_header.cls == 0x0000) {
+	system_mode();
+    }  else if (current_command->c_header.cls == 0x0001) {
+	actuator_command();
+    } else if (current_command->c_header.cls == 0x0002) {
+	kill();
+    } else if (current_command->c_header.cls == 0x0003) {
+	revive();
+    } else if (current_command->c_header.cls == 0x0004) {
+	logging();
+    } else if (current_command->c_header.cls == 0x0005) {
+	logging();
+    } else if (current_command->c_header.cls == 0x0006) {
+	heartbeat();
+    } else if (current_command->c_header.cls == 0x0007) {
+	control_loop();
+    } 
 }
+
+static void system_mode(){
+	int a2 = current_command->c_data.c_system_mode >> 6; 
+	int a1 = current_command->0b11&(c_data.c_system_mode >> 4);
+	int steer = current_command->0b11&(c_data.c_system_mode >> 2);
+	int thrott = current_command->0b11&c_data.c_system_mode;
+	 
+}
+
+static void actuator_command(){}
+static void kill(){}
+static void revive(){}
+static void logging(){}
+static void heartbeat(){}
+static void control_loop(){}
 
 //function for control thread
 static void *control(void *vargp){
@@ -54,35 +85,25 @@ static void *control(void *vargp){
     header = &header_data;
     header->cls = 0x0001;
     header->length = 1;
-    //printf("HI\n");
-    //printf("Class: %d\n", header->cls);
-    //printf("Length: %d\n", header->length);
+    printf("HI\n");
+    printf("Class: %d\n", header->cls);
+    printf("Length: %d\n", header->length);
     return NULL;
 }
 
 int main(void) {
     setmode(BCM);
-    //initialise pointer to command queue
+    initialise pointer to command queue
     command_qp = &command_queue[0];
     current_command = &command;
 
     (command_qp)->c_header.cls = 0x0000;
     (command_qp)->c_header.length = 1;
 
-    //create threads for processes
+    create threads for processes
     pthread_t tid[NUM_THREADS];
     pthread_create(&tid[0], NULL, control, NULL);
     pthread_join(tid[0], NULL);
     load_command();
-    setup(26, OUT, LOW);
-    int t = 0;
-    while(t<50){
- 	output(26, HIGH);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	output(26, LOW);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	t++;
-    }
-    GPIO::cleanup();
     exit(0);
 }
