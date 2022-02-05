@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 project(jetson_control)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../bin)
 
 add_executable(jetson_control src/jetson.cpp)
 

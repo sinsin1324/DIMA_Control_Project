@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/jetson_control.dir/src/jetson.cpp.o"
-  "jetson_control.pdb"
-  "jetson_control"
+  "../bin/jetson_control.pdb"
+  "../bin/jetson_control"
 )
 
 # Per-language clean rules from dependency scanning.
