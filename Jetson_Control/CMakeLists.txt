@@ -12,3 +12,4 @@ target_link_libraries(jetson_control PRIVATE Threads::Threads)
 find_package(JetsonGPIO REQUIRED)
 target_link_libraries(jetson_control PRIVATE JetsonGPIO::JetsonGPIO)
 
+
