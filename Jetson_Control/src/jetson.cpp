@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <chrono>
 #include <thread>
+#include <mutex>
 #include "command_packet.h"
 #include "JetsonGPIO.h"
 
@@ -12,6 +13,7 @@
 
 using namespace GPIO;
 
+int clk = 0;
 int header = 0;
 struct packet *command_qp, *current_command, command, command_queue[Q_SIZE];
 int packet_pos = -1;
@@ -69,7 +71,8 @@ static void system_mode(){
 	int a1 = current_command->0b11&(c_data.c_system_mode >> 4);
 	int steer = current_command->0b11&(c_data.c_system_mode >> 2);
 	int thrott = current_command->0b11&c_data.c_system_mode;
-	 
+
+    	 
 }
 
 static void actuator_command(){}
@@ -78,6 +81,13 @@ static void revive(){}
 static void logging(){}
 static void heartbeat(){}
 static void control_loop(){}
+
+static void *clock(void *vargp){
+    while (1) {
+        
+    }
+    return NULL;
+}
 
 //function for control thread
 static void *control(void *vargp){
@@ -102,8 +112,10 @@ int main(void) {
 
     create threads for processes
     pthread_t tid[NUM_THREADS];
-    pthread_create(&tid[0], NULL, control, NULL);
+    pthread_create(&tid[0], NULL, clock, NULL);
     pthread_join(tid[0], NULL);
+    pthread_create(&tid[1], NULL, control, NULL);
+    pthread_join(tid[1], NULL);
     load_command();
     exit(0);
 }
