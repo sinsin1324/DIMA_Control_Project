@@ -5,6 +5,7 @@ import struct
 from digi.xbee.devices import XBeeDevice
 from threading import Thread
 import datetime
+import time
 
 # Port where local module is connected to.
 PORT = "/dev/tty.usbserial-DN03133I"
@@ -23,6 +24,9 @@ remote_device = None
 log = False
 win = Tk()
 popup = Button()
+
+# Boolean set true to safely end program
+exit = False
 
 def array_to_bin(bit_arr):
     binval = 0b0
@@ -45,11 +49,14 @@ def init_Xbee():
     except:
         print("Could not open port to Xbee")
 
+def send_data(BITS_TO_SEND):
+    device.send_data(remote_device, BITS_TO_SEND)
+
 def send_header():
     global CLASS, SIZE
     HEADER = struct.pack('HH', CLASS, SIZE)
-    device.send_data(remote_device, HEADER)
-    
+    send_data(HEADER)
+
 def sys_mode(t, s, a1, a2):
     global DATA_TO_SEND, CLASS, SIZE
     CLASS = 0x0000
@@ -69,7 +76,7 @@ def sys_mode(t, s, a1, a2):
         i+=2
     send_header()
     BITS_TO_SEND = struct.pack('B', array_to_bin(DATA_TO_SEND))
-    device.send_data(remote_device, BITS_TO_SEND)
+    send_data(BITS_TO_SEND)
 
 def sys_mode_change(b):
     if b['text'] == "Throttle Manual":
@@ -111,7 +118,7 @@ def act_comms(AC, t, s, tv, a):
         else:
             BITS_TO_SEND = struct.pack('ffff', float(t.get()), float(s.get()), float(tv.get()), float(a.get()))
             send_header()
-            device.send_data(remote_device, BITS_TO_SEND)
+            send_data(BITS_TO_SEND)
     except Exception as e:
         missing_warning(AC, e)
         
@@ -238,14 +245,23 @@ def usr_thread():
     win.mainloop()
     
 def jtsn_thread():
-    pass
+    global exit
+    while(not exit):
+        print("hello")
+        time.sleep(1)
 
 def main():
+    global exit
     print(struct.pack('HH', 1, 1))
-    usr_thread()
     jtsn = Thread(target=jtsn_thread)
     jtsn.start()
+    usr_thread()
+    exit = True
+    jtsn.join()
+    sys.exit("Safely Closed")
+    
+    
     
 
 if __name__ == "__main__":
-  main()
+    main()
