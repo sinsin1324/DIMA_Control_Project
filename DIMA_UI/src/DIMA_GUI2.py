@@ -247,7 +247,7 @@ def usr_thread():
 def jtsn_thread():
     global exit
     while(not exit):
-        print("hello")
+        #do something
         time.sleep(1)
 
 def main():

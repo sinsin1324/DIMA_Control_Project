@@ -1,0 +1,19 @@
+ List all usb devices macos
+ls /dev/cu.usb*
+
+Screen a serial connection
+sudo screen /dev/cu.usbmodem14213210624303
+
+Find which port just connected
+ls /dev > device_names.txt
+ls /dev | diff - device_names.txt
+
+Username/Password for Jetson:
+uct - dimaproject
+
+bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x01')
+
+xbee_comms.py is the file that receives on jetson
+
+sudo insmod /lib/modules/4.9.253-tegra/kernel/drivers/usb/serial/ftdi_sio.ko vendor=0x0403 product=0x6015
+^^^^^^^^^^^^^^^^^^^^^^^  USED TO DETECT USB0 ON JETSON
