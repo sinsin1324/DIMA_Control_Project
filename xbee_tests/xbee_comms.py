@@ -40,7 +40,6 @@ def data_receive_callback(xbee_message):
                     print(bin(var[0]))
                     header=False
                 elif CLASS == 0x0001:
-                    var = struct.unpack('ffff', message)
                     for x in var:
                         print(float(x))
                     header=False

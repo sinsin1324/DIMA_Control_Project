@@ -6,7 +6,7 @@
 #include <errno.h> // Error integer and strerror() function
 #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h> // write(), read(), close()
-
+#include <string>
 int main() {
     int xbee_port = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY );
 
@@ -59,21 +59,20 @@ int main() {
     tty.c_oflag &= ~ONLCR;
 
     //setting minimum characters to be read and timeout
-    tty.c_cc[VMIN] = 1;
-    tty.c_cc[VTIME] = 1; //tenths of a second
+    tty.c_cc[VMIN] = 6;
+    tty.c_cc[VTIME] = 10; //tenths of a second
 
     // Set in/out baud rate to be 230400
     cfsetispeed(&tty, B230400);
     cfsetospeed(&tty, B230400);
-
+    
     // Save tty settings, also checking for error
     if (tcsetattr(xbee_port, TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
         return 1;
     }
     
-    char read_buf[256];
-    memset(&read_buf, '\0', sizeof(read_buf));
+    char read_buf[6];
     
     int num_bytes = read(xbee_port, &read_buf, sizeof(read_buf));
     
@@ -82,6 +81,6 @@ int main() {
         return 1;
     }
     
-    printf("Read %i bytes. Received message: %s", num_bytes, read_buf);
+    printf("%s", read_buf);
     return 0;   
 }
