@@ -256,6 +256,7 @@ def main():
     jtsn = Thread(target=jtsn_thread)
     jtsn.start()
     usr_thread()
+    
     exit = True
     jtsn.join()
     sys.exit("Safely Closed")

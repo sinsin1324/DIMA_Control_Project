@@ -51,12 +51,13 @@ def init_Xbee():
 
 def send_data(BITS_TO_SEND):
     device.send_data(remote_device, BITS_TO_SEND)
+    print("BITS TO SEND: " + BITS_TO_SEND)
 
 def send_header():
     global CLASS, SIZE
-    HEADER = struct.pack('HH', CLASS, SIZE)
-    send_data(HEADER)
-    print(HEADER)
+    HEADER = str(CLASS)+ str(SIZE)
+    device.send_data(remote_device, HEADER)
+    print("HEADER: " + HEADER)
 
 def sys_mode(t, s, a1, a2):
     global DATA_TO_SEND, CLASS, SIZE
@@ -76,7 +77,7 @@ def sys_mode(t, s, a1, a2):
             print("Unknown Button Value")
         i+=2
     send_header()
-    BITS_TO_SEND = struct.pack('B', array_to_bin(DATA_TO_SEND))
+    BITS_TO_SEND = str(array_to_bin(DATA_TO_SEND))
     send_data(BITS_TO_SEND)
 
 def sys_mode_change(b):
@@ -117,7 +118,7 @@ def act_comms(AC, t, s, tv, a):
             popup = Button(AC, text = "Bounds: -100% to 100%. Click to remove warning", command=lambda:popup.destroy(), font=("Courier", 18), highlightbackground="orange", bg="orange")
             popup.grid(row=2,column=2)
         else:
-            BITS_TO_SEND = struct.pack('ffff', float(t.get()), float(s.get()), float(tv.get()), float(a.get()))
+            BITS_TO_SEND = str(float(t.get())) + str(float(s.get())) + str(float(tv.get())) + str(float(a.get()))
             send_header()
             send_data(BITS_TO_SEND)
     except Exception as e:
