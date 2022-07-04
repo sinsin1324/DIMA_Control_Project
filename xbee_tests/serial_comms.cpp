@@ -1,3 +1,4 @@
+#include <sys/file.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -7,7 +8,7 @@
 #include <unistd.h> // write(), read(), close()
 
 int main() {
-    int xbee_port = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NONBLOCK);
+    int xbee_port = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY );
 
     if (xbee_port < 0) {
         printf("Error %i from open: %s\n", errno, strerror(errno));
@@ -80,6 +81,7 @@ int main() {
         printf("Error reading: %s", strerror(errno));
         return 1;
     }
-
+    
+    printf("Read %i bytes. Received message: %s", num_bytes, read_buf);
     return 0;   
 }
