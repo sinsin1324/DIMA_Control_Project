@@ -24,7 +24,7 @@
 using namespace GPIO;
 
 header, in_h, in_h2 = 0;
-packet_pos = -1;
+packet_pos, in_pp = -1;
 
 static void void initPort(int *xbee_port) {
     struct termios tty;
@@ -98,14 +98,22 @@ static void *telemetry(void *vargp) {
             fp = fopen("/dev/ttyUSB0", "r+");
             if (fp) {
                 while ((c = getc(fp)) != EOF){
-                    if (isdigit(c) || c == ' ' || c == '.' || c == '-') {
-
+                    if (isdigit(c)) {
                         if (!in_h) {
-                            if (!in_h2) {
-                                (command_qp+packet_pos)->c_header.cls
-                            }
+                            q_lock.lock();
+                            (command_qp+packet_pos)->c_header.cls = c - '0';
+                            q_lock.unlock();
+                            in_h = 1;
+                        } else if (!in_h2) {
+                            q_lock.lock();
+                            (command_qp+packet_pos)->c_header.length = c - '0';
+                            q_lock.unlock();
+                            in_h2 = 1;
+                        } else if ((command_qp+packet_pos)->c_header.cls == ) {
                             
                         }
+                    } else if (c == ' ' || c == '.' || c == '-') {
+
                     }
                     sleep(0.05);
                 }
