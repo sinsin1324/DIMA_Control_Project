@@ -1,25 +1,18 @@
 #include <sys/file.h>
 #include <stdio.h>
 #include <string.h>
-
+#include<ctype.h>
 #include <fcntl.h> // Contains file controls like O_RDWR
 #include <errno.h> // Error integer and strerror() function
 #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h> // write(), read(), close()
 #include <string>
-int main() {
-    int xbee_port = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY );
 
-    if (xbee_port < 0) {
-        printf("Error %i from open: %s\n", errno, strerror(errno));
-    }
-
+void initPort(int *xbee_port) {
     struct termios tty;
 
     //change configuration settings for serial ports
-    if(tcgetattr(xbee_port, &tty) != 0) {
-        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
-    }
+    tcgetattr(*xbee_port, &tty);
 
     //set parity bit
     tty.c_cflag &= ~PARENB;
@@ -67,20 +60,29 @@ int main() {
     cfsetospeed(&tty, B230400);
     
     // Save tty settings, also checking for error
-    if (tcsetattr(xbee_port, TCSANOW, &tty) != 0) {
-        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-        return 1;
+    tcsetattr(*xbee_port, TCSANOW, &tty);
+}
+
+int main() {
+
+    // int xbee_port = open("/dev/tty.usbserial-DN02SSJ0", O_RDWR | O_NOCTTY | O_NDELAY);
+    int xbee_port = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
+
+    if (xbee_port < 0) {
+        printf("Error %i from open: %s\n", errno, strerror(errno));
     }
-    
-    char read_buf[6];
-    
-    int num_bytes = read(xbee_port, &read_buf, sizeof(read_buf));
-    
-    if (num_bytes < 0) {
-        printf("Error reading: %s", strerror(errno));
-        return 1;
-    }
-    
-    printf("%s", read_buf);
+
+    initPort(&xbee_port);
+    FILE *fp;
+    int c;
+    // fp = fopen("/dev/tty.usbserial-DN02SSJ0", "r+");
+    fp = fopen("/dev/ttyUSB0", "r+");
+    if (fp) {
+		while ((c = getc(fp)) != EOF){
+            if (isdigit(c) || c == ' ' || c == '.' || c == '-') putchar(c);
+            sleep(0.05);
+        }
+		fclose(fp);
+	}
     return 0;   
 }

@@ -12,8 +12,8 @@ PORT = "/dev/tty.usbserial-DN03133I"
 # Baud rate of local module.
 BAUD_RATE = 230400
 DATA_TO_SEND = None
-CLASS = 0x0000
-SIZE = 0
+CLASS = 0x0001
+SIZE = 2
 REMOTE_NODE_ID = "ROUTER"
 #0013A20041064451 for router
 #0013A20041064456 coordinator
@@ -118,7 +118,7 @@ def act_comms(AC, t, s, tv, a):
             popup = Button(AC, text = "Bounds: -100% to 100%. Click to remove warning", command=lambda:popup.destroy(), font=("Courier", 18), highlightbackground="orange", bg="orange")
             popup.grid(row=2,column=2)
         else:
-            BITS_TO_SEND = str(float(t.get())) + str(float(s.get())) + str(float(tv.get())) + str(float(a.get()))
+            BITS_TO_SEND = str(float(t.get())) + " " + str(float(s.get())) + " " + str(float(tv.get())) + " " + str(float(a.get()))
             send_header()
             send_data(BITS_TO_SEND)
     except Exception as e:
@@ -167,7 +167,7 @@ def usr_thread():
     global win
 
     init_Xbee()
-
+    send_header()
     win.geometry("1080x720")
     win.title("DIMA Controller")
     win.configure(highlightbackground="#D3D3D3", bg="#D3D3D3")

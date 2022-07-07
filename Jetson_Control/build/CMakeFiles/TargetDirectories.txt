@@ -1,3 +1,0 @@
-/home/uct/DIMA/DIMA_Control_Project/Jetson_Control/build/CMakeFiles/rebuild_cache.dir
-/home/uct/DIMA/DIMA_Control_Project/Jetson_Control/build/CMakeFiles/jetson_control.dir
-/home/uct/DIMA/DIMA_Control_Project/Jetson_Control/build/CMakeFiles/edit_cache.dir
