@@ -78,11 +78,12 @@ int main() {
     // fp = fopen("/dev/tty.usbserial-DN02SSJ0", "r+");
     fp = fopen("/dev/ttyUSB0", "r+");
     if (fp) {
-		while ((c = getc(fp)) != EOF){
+        while ((c = getc(fp)) != EOF){
             if (isdigit(c) || c == ' ' || c == '.' || c == '-' || c == '+') putchar(c);
             sleep(0.05);
         }
-		fclose(fp);
-	}
+        fclose(fp);
+    }
     return 0;   
 }
+
