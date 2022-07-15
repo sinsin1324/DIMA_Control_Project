@@ -17,3 +17,8 @@ xbee_comms.py is the file that receives on jetson
 
 sudo insmod /lib/modules/4.9.253-tegra/kernel/drivers/usb/serial/ftdi_sio.ko vendor=0x0403 product=0x6015
 ^^^^^^^^^^^^^^^^^^^^^^^  USED TO DETECT USB0 ON JETSON
+
+CMAKE:
+cd build
+cmake ..
+make
