@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include<ctype.h>
 #include <unistd.h>
 #include <chrono>
@@ -13,13 +14,12 @@
 #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h> // write(), read(), close()
 #include <string>
+#include <algorithm>
+#include <iostream>
 
 #include "command_packet.h"
 #include "JetsonGPIO.h"
 #include "jetson.h"
-
-#define NUM_THREADS 5
-#define Q_SIZE 30
 
 using namespace GPIO;
 
@@ -80,6 +80,7 @@ static void void initPort(int *xbee_port) {
     // Save tty settings, also checking for error
     tcsetattr(*xbee_port, TCSANOW, &tty);
 }
+
 static void *telemetry(void *vargp) {
 
         // int xbee_port = open("/dev/tty.usbserial-DN02SSJ0", O_RDWR | O_NOCTTY | O_NDELAY);
@@ -102,19 +103,63 @@ static void *telemetry(void *vargp) {
                         if (!in_h) {
                             q_lock.lock();
                             (command_qp+packet_pos)->c_header.cls = c - '0';
-                            q_lock.unlock();
-                            in_h = 1;
-                        } else if (!in_h2) {
-                            q_lock.lock();
+                            c = getc(fp)
                             (command_qp+packet_pos)->c_header.length = c - '0';
+                            in_h = 1;
                             q_lock.unlock();
-                            in_h2 = 1;
-                        } else if ((command_qp+packet_pos)->c_header.cls == ) {
-                            
-                        }
-                    } else if (c == ' ' || c == '.' || c == '-') {
+                            std::cout << "CLASS: " << (command_qp+packet_pos)->c_header.cls << std::endl
+                                << "SIZE: " << (command_qp+packet_pos)->c_header.length << std::endl;
+                        } else {
+                            q_lock.lock();
+                            if ((command_qp+packet_pos)->c_header.cls == 0x0000) {
+                                char temp_sys[3] = {'a','a','a'};
+                                try {
+                                    temp_sys[0] = c;
+                                    c = getc(fp);
+                                    temp_sys[1] = c;
+                                    c = getc(fp);
+                                    temp_sys[2] = c;
+                                } catch(...) {
+                                    pass
+                                }
+                                system_mode_command total_sys = 0;
+                                int counter_sys = 0;
+                                for (int i = 2; i > -1; i--) {
+                                    if (isdigit(temp_sys[i])) {
+                                        total_sys += (temp_sys[i]-'0') * pow(10, counter_sys);
+                                        counter_sys++;
+                                    }
+                                }
+                                (command_qp+packet_pos)->c_data.c_system_mode = total_sys;
+                            } else if ((command_qp+packet_pos)->c_header.cls == 0x0001) {
+                                char temp_flo[6] = {'a','a','a','a','a','a'};
+                                int temp_ls[4] = {1,2,3,5};
+                                for (int i = 0; i < 4; i++) {
+                                    float curr_act = 0;
+                                    for (int j = 0; j < 6; j++) {
+                                        temp_flo[j] = c;
+                                        if (j!=5) getc(fp);
+                                    }
 
-                    }
+                                    int power = 2;
+                                    for (int k = 0; k < 4; k++) {
+                                        curr_act += (temp_flo[temp_ls[k]]-'0') * pow(10, power);
+                                        power--;
+                                    }
+                                    if (i==0) {
+                                        (command_qp+packet_pos)->c_data.c_actuator.throttle == curr_act;
+                                    } else if (i==1) {
+                                        (command_qp+packet_pos)->c_data.c_actuator.steering == curr_act;
+                                    } else if (i==2) {
+                                        (command_qp+packet_pos)->c_data.c_actuator.tail_velocity == curr_act;
+                                    } else if (i==3) {
+                                        (command_qp+packet_pos)->c_data.c_actuator.aux2 == curr_act;
+                                    }
+                                }
+                            }
+                            q_lock.unlock();
+                            in_h = 0;
+                        }
                     sleep(0.05);
                 }
                 fclose(fp);
