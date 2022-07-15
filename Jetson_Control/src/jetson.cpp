@@ -23,8 +23,8 @@
 
 using namespace GPIO;
 
-header in_h = 0;
-packet_pos, in_pp = -1;
+header=0, in_h=0;
+packet_pos=-1, in_pp=-1;
 
 static void void initPort(int *xbee_port) {
     struct termios tty;
