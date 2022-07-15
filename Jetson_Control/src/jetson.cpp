@@ -23,7 +23,7 @@
 
 using namespace GPIO;
 
-header, in_h, in_h2 = 0;
+header in_h = 0;
 packet_pos, in_pp = -1;
 
 static void void initPort(int *xbee_port) {
@@ -120,7 +120,7 @@ static void *telemetry(void *vargp) {
                                     c = getc(fp);
                                     temp_sys[2] = c;
                                 } catch(...) {
-                                    pass
+                                    pass;
                                 }
                                 system_mode_command total_sys = 0;
                                 int counter_sys = 0;
@@ -225,12 +225,12 @@ static void system_mode(){
     	 
 }
 
-static void actuator_command(){}
-static void kill(){}
-static void revive(){}
-static void logging(){}
-static void heartbeat(){}
-static void control_loop(){}
+static void actuator_command(){pass;}
+static void kill(){pass;}
+static void revive(){pass;}
+static void logging(){pass;}
+static void heartbeat(){pass;}
+static void control_loop(){pass;}
 
 //function for control thread
 static void *control(void *vargp){
