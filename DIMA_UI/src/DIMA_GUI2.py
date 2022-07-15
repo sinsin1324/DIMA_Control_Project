@@ -36,6 +36,22 @@ def array_to_bin(bit_arr):
         i-=1
     return binval
 
+def set_float_string(fl):
+    if (fl<0):
+        if (abs(fl)<10):
+            return "-00"+str(abs(fl)+0.0)
+        elif (abs(fl)<100):
+            return "-0"+str(abs(fl)+0.0)
+    elif (fl>0):
+        if (abs(fl)<10):
+            return "+00"+str(abs(fl)+0.0)
+        elif (abs(fl)<100):
+            return "+0"+str(abs(fl)+0.0)
+    elif (fl==0):
+        return "+000.0"
+    return "0"
+        
+
 def init_Xbee():
     global device, remote_device
     try:
@@ -118,7 +134,7 @@ def act_comms(AC, t, s, tv, a):
             popup = Button(AC, text = "Bounds: -100% to 100%. Click to remove warning", command=lambda:popup.destroy(), font=("Courier", 18), highlightbackground="orange", bg="orange")
             popup.grid(row=2,column=2)
         else:
-            BITS_TO_SEND = str(float(t.get())) + " " + str(float(s.get())) + " " + str(float(tv.get())) + " " + str(float(a.get()))
+            BITS_TO_SEND = set_float_string(t.get()) + set_float_string(s.get()) + set_float_string(tv.get()) + set_float_string(a.get())
             send_header()
             send_data(BITS_TO_SEND)
     except Exception as e:
@@ -167,7 +183,6 @@ def usr_thread():
     global win
 
     init_Xbee()
-    send_header()
     win.geometry("1080x720")
     win.title("DIMA Controller")
     win.configure(highlightbackground="#D3D3D3", bg="#D3D3D3")
@@ -212,13 +227,17 @@ def usr_thread():
     tv_label.grid(row=3, column=0, sticky=W, padx=(100,0))
     a_label = Label(AC_frame, text = "Aux2 Level", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     a_label.grid(row=4, column=0, sticky=W, padx=(100,0))
-    t_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    #t_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    t_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     t_entry.grid(row=1, column=1)
-    s_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    #s_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    s_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     s_entry.grid(row=2, column=1)
-    tv_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    #tv_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    tv_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     tv_entry.grid(row=3, column=1)
-    a_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    #a_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    a_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     a_entry.grid(row=4, column=1)
     percent1 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     percent1.grid(row=1, column=2, sticky=W)

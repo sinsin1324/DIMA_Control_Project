@@ -1,6 +1,10 @@
 #include <mutex>
 
-int header, in_h, in_h2;
+#define NUM_THREADS 5
+#define Q_SIZE 30
+#define pass (void)0
+
+int header, in_h, act_count;
 char cls1;
 struct packet *command_qp, *current_command, command, command_queue[Q_SIZE];
 int packet_pos, in_pp;

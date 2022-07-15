@@ -79,7 +79,7 @@ int main() {
     fp = fopen("/dev/ttyUSB0", "r+");
     if (fp) {
 		while ((c = getc(fp)) != EOF){
-            if (isdigit(c) || c == ' ' || c == '.' || c == '-') putchar(c);
+            if (isdigit(c) || c == ' ' || c == '.' || c == '-' || c == '+') putchar(c);
             sleep(0.05);
         }
 		fclose(fp);
