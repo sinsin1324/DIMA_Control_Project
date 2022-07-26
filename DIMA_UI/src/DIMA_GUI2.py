@@ -247,7 +247,7 @@ def usr_thread():
     percent3.grid(row=3, column=2, sticky=W)
     percent4 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     percent4.grid(row=4, column=2, sticky=W)
-    act2_ok = Button(AC_frame, height = 2, width = 12, command=lambda:act_comms(win, t_entry, s_entry, tv_entry, a_entry), text="Send Command")
+    act2_ok = Button(AC_frame, height = 2, width = 12, command=lambda:act_comms(win, t_entry, s_entry, tv_entry, a_entry), text="Stop Manual Control")
     act2_ok.grid(row=5, column=0, columnspan=3)
     
     STATUS_frame = Frame(win)
