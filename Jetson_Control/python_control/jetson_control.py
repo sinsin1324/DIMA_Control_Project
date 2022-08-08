@@ -7,7 +7,7 @@ import threading
 
 # Port where local module is connected
 # PORT = "/dev/ttyUSB0"
-PORT = "/dev/tty.usbserial-DN02SSJ0"
+PORT = "/dev/ttyUSB0"
 # Baud rate of local module.
 BAUD_RATE = 230400
 
