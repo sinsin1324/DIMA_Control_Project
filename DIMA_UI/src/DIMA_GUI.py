@@ -228,7 +228,7 @@ def usr_thread():
     aux2.pack(padx=(200,54), pady=(5,0))
     act_ok.pack(pady=(5,5))
     
-    sys_mode(throttle, steering, aux1, aux2)
+    #sys_mode(throttle, steering, aux1, aux2)
     
     #create & pack actuator command frame
     AC_frame = Frame(win, height=3, width=20, highlightbackground="#ffac81", bg="#ffac81")
