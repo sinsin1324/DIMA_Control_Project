@@ -9,6 +9,7 @@ ls /dev > device_names.txt
 ls /dev | diff - device_names.txt
 
 Username/Password for Jetson:
+dima - dimaproject
 uct - dimaproject
 
 bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x01')
@@ -17,6 +18,9 @@ xbee_comms.py is the file that receives on jetson
 
 sudo insmod /lib/modules/4.9.253-tegra/kernel/drivers/usb/serial/ftdi_sio.ko vendor=0x0403 product=0x6015
 ^^^^^^^^^^^^^^^^^^^^^^^  USED TO DETECT USB0 ON JETSON
+
+sudo insmod /lib/modules/4.9.253-tegra/kernel/drivers/usb/serial/ftdi_sio.ko vendor=0x1ffb product=0x0089
+^^^^^^^^^^^^^^^^^^^^^^^  USED TO DETECT ACM0 ON JETSON
 
 CMAKE:
 cd build
