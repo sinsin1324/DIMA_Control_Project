@@ -22,7 +22,12 @@ sudo insmod /lib/modules/4.9.253-tegra/kernel/drivers/usb/serial/ftdi_sio.ko ven
 sudo insmod /lib/modules/4.9.253-tegra/kernel/drivers/usb/serial/ftdi_sio.ko vendor=0x1ffb product=0x0089
 ^^^^^^^^^^^^^^^^^^^^^^^  USED TO DETECT ACM0 ON JETSON
 
+sudo mod probe spidev	USED TO DETECT SPIDEV0.0
+
 CMAKE:
 cd build
 cmake ..
 make
+
+GPS module detected on:
+/dev/gps0
