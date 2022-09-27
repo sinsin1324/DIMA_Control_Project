@@ -21,14 +21,16 @@ def temperature():
 
 def prin():
     global x
-    while (x<20):
+    while (True):
         print(x)
         print(sensor.euler)
         print(sensor.gravity)
-        x+=1
+        #x+=1
+        time.sleep(0.5)
 
 if __name__ == "__main__":
     time.sleep(2)
     st = time.time()
+    print("Started")
     prin()  
     print(time.time()-st)
