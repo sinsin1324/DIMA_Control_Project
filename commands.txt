@@ -30,4 +30,4 @@ cmake ..
 make
 
 GPS module detected on:
-/dev/gps0
+/dev/gps0 OR /dev/ACM0
