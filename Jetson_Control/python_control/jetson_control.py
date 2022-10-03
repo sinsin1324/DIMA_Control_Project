@@ -4,12 +4,19 @@ import time
 import sys
 import struct
 import threading
+import maestro
 
 # Port where local module is connected
 # PORT = "/dev/ttyUSB0"
 PORT = "/dev/ttyUSB0"
 # Baud rate of local module.
 BAUD_RATE = 230400
+
+servo = maestro.Controller()
+target = 0
+min_pos = 800*4
+max_pos = 2000*4
+channel = 0
 
 i = 0
 header = False
@@ -20,71 +27,115 @@ curr_command = []
 q_pos = -1
 q_lock = threading.Lock()
 curr_lock = threading.Lock()
+manual_data = 0
+selected_mode_handler = None
 
 def data_receive_callback(xbee_message):
-            global header, CLASS, SIZE
-            var = None
-            message = xbee_message.data
-            if not header:
-                var = struct.unpack('HH', message)
-                CLASS = var[0]
-                SIZE = var[1]
-                header=True
-                if SIZE == 0:
-                    if CLASS == 0x0002:
-                        print("Robot Killed")
-                        q_lock.acquire()
-                        command_q.append([CLASS, 'k'])
-                        q_lock.release()
-                    elif CLASS == 0X0003:
-                        print("Robot Revived")
-                        q_lock.acquire()
-                        command_q.append([CLASS, 'r'])
-                        q_lock.release()
-                    elif CLASS == 0X0004:
-                        print("Logging Enabled")
-                        q_lock.acquire()
-                        command_q.append([CLASS, 'l'])
-                        q_lock.release()
-                    elif CLASS == 0X0005:
-                        print("Logging Disabled")
-                        q_lock.acquire()
-                        command_q.append([CLASS, 'n'])
-                        q_lock.release()
-                    header=False
+    global header, CLASS, SIZE, manual_data
+    var = None
+    message = xbee_message.data
+    if not header:
+        var = struct.unpack('HH', message)
+        CLASS = var[0]
+        SIZE = var[1]
+        header=True
+        if SIZE == 0:
+            if CLASS == 0x0002:
+                print("Robot Killed")
+                q_lock.acquire()
+                command_q.append([CLASS, 'k'])
+                q_lock.release()
+            elif CLASS == 0X0003:
+                print("Robot Revived")
+                q_lock.acquire()
+                command_q.append([CLASS, 'r'])
+                q_lock.release()
+            elif CLASS == 0X0004:
+                print("Logging Enabled")
+                q_lock.acquire()
+                command_q.append([CLASS, 'l'])
+                q_lock.release()
+            elif CLASS == 0X0005:
+                print("Logging Disabled")
+                q_lock.acquire()
+                command_q.append([CLASS, 'n'])
+                q_lock.release()
+            header=False
+    else:
+        if CLASS == 0x0000:
+            var = struct.unpack('B', message)
+            print(bin(var[0]))
+            q_lock.acquire()
+            command_q.append([CLASS, var[0]])
+            q_lock.release()
+            header=False
+        elif CLASS == 0x0001:
+            var = struct.unpack('ffff', message)
+            if (var[0] == -200):
+                header=False
             else:
-                if CLASS == 0x0000:
-                    var = struct.unpack('B', message)
-                    print(bin(var[0]))
-                    q_lock.acquire()
-                    command_q.append([CLASS, var[0]])
-                    q_lock.release()
-                    header=False
-                elif CLASS == 0x0001:
-                    var = struct.unpack('ffff', message)
-                    if (var[0] == -200):
-                        header=False
-                    else:
-                        q_lock.acquire()
-                        command_q.append([CLASS, var])
-                        q_lock.release()
-                
+                # q_lock.acquire()
+                # command_q.append([CLASS, var])
+                # q_lock.release()
+                manual_data = var[0]
+                selected_mode_handler(manual_data)
+
+#command handlers              
+def manual_control(data):
+    global servo, target
+    steering, thrust, brk, tail = data
+    servo.setTarget(channel, steering)
+    servo.setTarget(channel+1, thrust)
+    servo.setTarget(channel+2, brk)
+    
+        
+def auto_control(data):
+    pass
+
+def control_loop_control(data):
+    pass
+
+def kill():
+    pass
+
+def revive():
+    pass
+
+def toggle_logging():
+    pass
+
+def operating_mode(data):
+    global selected_mode_handler
+    mode_map = {
+        0x0: manual_control,
+        0x1: auto_control,
+        0x2: control_loop_control
+    }
+    selected_mode_handler = mode_map[data]
+
+class_dict = {0x0:operating_mode}
 
 def main():
+    global channel, servo
     print(" +-----------------------------------------+")
     print(" |         XBee Receive Data Sample        |")
     print(" +-----------------------------------------+\n")
 
+    #initialise servo
     device = XBeeDevice(PORT, BAUD_RATE)
+    servo.setAccel(channel, 4)  # set servo 0 acceleration to 4
+    servo.setSpeed(channel, 0)  # set speed of servo 0
+    
     try:
         device.open()
-        l = 0
         device.add_data_received_callback(data_receive_callback)
         while (True):
-            if (len(command_q) > l):
-                l+=1
+            if (len(command_q) > 0):
                 print("Class: " + str(command_q[-1][0]))
                 print(command_q[-1][1])
+                cls, data = command_q.pop(0)
+                class_dict[cls](data)
+                
     finally:
         if device is not None and device.is_open():
             device.close()
