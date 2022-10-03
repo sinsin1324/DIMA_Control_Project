@@ -310,7 +310,7 @@ def slider_thread():
             a = a_entry.get()
             s = s_entry.get()
             act_comms(win, t_entry, s_entry, tv_entry, a_entry)
-        time.sleep(0.5)
+        time.sleep(0.1)
         
 def main():
     global exit
