@@ -77,13 +77,22 @@ def data_receive_callback(xbee_message):
                 # q_lock.acquire()
                 # command_q.append([CLASS, var])
                 # q_lock.release()
-                manual_data = var[0]
+                manual_data = var
                 selected_mode_handler(manual_data)
 
 #command handlers              
 def manual_control(data):
     global servo, target
-    steering, thrust, brk, tail = data
+    rnge_s = 7996-4032
+    rnge_b = 7360-4992
+    print(data)
+    data = list(data)
+    for x in range(2):
+        data[x] = ((data[x]+100)/200 * rnge_s) + 4032
+    data[2] =  ((data[2]+100)/200 * rnge_b) + 4992
+    
+    steering, thrust, brk, tail = [int(x) for x in data]
+    
     servo.setTarget(channel, steering)
     servo.setTarget(channel+1, thrust)
     servo.setTarget(channel+2, brk)

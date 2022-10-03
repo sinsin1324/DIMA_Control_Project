@@ -5,10 +5,10 @@ import time
 servo = maestro.Controller()
 target = 0
 var = False
-
+x = 0
 
 def main():
-    global servo, target, var
+    global servo, target, var, x
     min_pos = 800*4
     max_pos = 2000*4
     channel = 0
@@ -45,8 +45,8 @@ def control(c):
     #	servo.setTarget(c, x)	
     #	print("going to: ", x)
     # Time.sleep(2)
-    while not var:
-        pass
+    servo.setTarget(c, x)
+    sleep(2)
     if c == 0 or c == 1:
         servo.setTarget(c,target)
         # time.sleep(3)

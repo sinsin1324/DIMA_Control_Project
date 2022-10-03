@@ -35,6 +35,9 @@ else:
 
 print('Moving to: %d quarter-microseconds' % target)
 
+print(mu.set_target(channel, position))
+print(mu.set_target(channel3, position))
+time.sleep(2)
 mu.set_target(channel, target)
 
 mu.set_target(channel3, target)
