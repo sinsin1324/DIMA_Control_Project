@@ -79,7 +79,7 @@ def data_receive_callback(xbee_message):
             q_lock.release()
             header=False
         elif CLASS == 0x0001:
-            var = struct.unpack('ffff', message)
+            var = struct.unpack('fffff', message)
             if (var[0] == -200):
                 header=False
             else:
@@ -98,7 +98,7 @@ def manual_control(data):
         data[x] = servo_s_conversion(data[x])
     data[2] = servo_b_conversion(data[2])
 
-    steering, thrust, brk, tail = [int(x) for x in data]
+    steering, thrust, brk, tail1, tail2 = [int(x) for x in data]
     servos = [steering, thrust, brk]
     for x in range(3):
         servo.setTarget(channel+x, servos[x])
@@ -111,21 +111,22 @@ def control_loop_control(data):
 
 def rest_control(placeholder):
     global servo, target, rnge_s, rnge_b
-    data = [0,0,0,0]
+    data = [0,0,0,0,0]
     for x in range(2):
         data[x] = servo_s_conversion(data[x])
     data[2] = servo_b_conversion(data[2])
     
-    steering, thrust, brk, tail = [int(x) for x in data]
+    steering, thrust, brk, tail1, tail2 = [int(x) for x in data]
     for x in range(3):
         servo.setSpeed(channel+x, 5)
     servos = [steering, thrust, brk]
     for x in range(3):
         servo.setTarget(channel+x, servos[x])
-    time.sleep(1)
+    time.sleep(4)
     for x in range(3):
         print("Servo " + str(x) + " at " + str(servo.getPosition(channel+x)))
-
+        servo.setSpeed(channel+x, 0)
+        
 def kill():
     pass
 
