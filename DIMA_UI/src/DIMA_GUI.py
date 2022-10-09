@@ -30,18 +30,18 @@ log = False
 win = Tk()
 popup = Button()
 t_entry = tv_entry = s_entry = a_entry = None
-manual_mode = False
+manual_mode = 0
 
 # Boolean set true to safely end program
 exit = False
 
-def array_to_bin(bit_arr):
-    binval = 0b0
-    i = len(bit_arr)-1
-    for bit in bit_arr:
-        binval += bit<<(i)
-        i-=1
-    return binval
+# def array_to_bin(bit_arr):
+#     binval = 0b0
+#     i = len(bit_arr)-1
+#     for bit in bit_arr:
+#         binval += bit<<(i)
+#         i-=1
+#     return binval
 
 def init_Xbee():
     global device, remote_device
@@ -65,87 +65,108 @@ def send_header():
     send_data(HEADER)
     print(HEADER)
 
-def sys_mode(t, s, a1, a2):
+def sys_mode(m):
     global DATA_TO_SEND, CLASS, SIZE, manual_mode
     CLASS = 0x0000
     SIZE = 1
-    DATA_TO_SEND = [0b0,0b0,0b0,0b0,0b0,0b0,0b0,0b0]
-    buttons = [a2,a1,s,t]
-    i=0
+    DATA_TO_SEND = 0b00
     extra_header = False
-    for button in buttons:
-        if "Manual" in button['text']:
-            extra_header = True
-        elif "Auto" in button['text']:
-            DATA_TO_SEND[i+1] = 0b1
-        elif "Control" in button['text']:
-            DATA_TO_SEND[i] = 0b1
-        else:
-            print("Unknown Button Value")
-        i+=2
+    if "Manual" in m['text']:
+        extra_header = True
+        manual_mode = 0
+    elif "Auto" in m['text']:
+        DATA_TO_SEND = 0b01
+        manual_mode = 1
+    elif "Control" in m['text']:
+        extra_header = True
+        DATA_TO_SEND = 0b10
+        manual_mode = 2
+    elif "Rest" in m['text']:
+        DATA_TO_SEND = 0b11
+        manual_mode = 3
+    # buttons = [a2,a1,s,t]
+    # i=0
+    # for button in buttons:
+    #     if "Manual" in button['text']:
+    #         extra_header = True
+    #     elif "Auto" in button['text']:
+    #         DATA_TO_SEND[i+1] = 0b1
+    #     elif "Control" in button['text']:
+    #         DATA_TO_SEND[i] = 0b1
+    #     else:
+    #         print("Unknown Button Value")
+        # i+=2
     send_header()
-    BITS_TO_SEND = struct.pack('B', array_to_bin(DATA_TO_SEND))
+    # BITS_TO_SEND = struct.pack('B', array_to_bin(DATA_TO_SEND))
+    BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
     send_data(BITS_TO_SEND)
     if extra_header:
-        manual_mode = True
         CLASS = 0x0001
         SIZE = 4
         send_header()
-    else:
-        manual_mode = False
     
 
 def sys_mode_change(b):
-    if b['text'] == "Throttle Manual":
-        b.configure(text="Throttle Auto")
-    elif b['text'] == "Throttle Auto":
-        b.configure(text="Throttle Control")
-    elif b['text'] == "Throttle Control":
-        b.configure(text="Throttle Manual")
+    if "Manual" in b['text']:
+        b.configure(text="Auto Mode")
+    elif "Auto" in b['text']:
+        b.configure(text="Control Mode")
+    elif "Control" in b['text']:
+        b.configure(text="Resting Mode")
+    elif "Rest" in b['text']:
+        b.configure(text="Manual Mode")
     
-    if b['text'] == "Steering Manual":
-        b.configure(text="Steering Auto")
-    elif b['text'] == "Steering Auto":
-        b.configure(text="Steering Control")
-    elif b['text'] == "Steering Control":
-        b.configure(text="Steering Manual")
+    # if b['text'] == "Throttle Manual":
+    #     b.configure(text="Throttle Auto")
+    # elif b['text'] == "Throttle Auto":
+    #     b.configure(text="Throttle Control")
+    # elif b['text'] == "Throttle Control":
+    #     b.configure(text="Throttle Manual")
+    
+    # if b['text'] == "Steering Manual":
+    #     b.configure(text="Steering Auto")
+    # elif b['text'] == "Steering Auto":
+    #     b.configure(text="Steering Control")
+    # elif b['text'] == "Steering Control":
+    #     b.configure(text="Steering Manual")
 
-    if b['text'] == "Aux1 Manual":
-        b.configure(text="Aux1 Auto")
-    elif b['text'] == "Aux1 Auto":
-        b.configure(text="Aux1 Control")
-    elif b['text'] == "Aux1 Control":
-        b.configure(text="Aux1 Manual")
+    # if b['text'] == "Aux1 Manual":
+    #     b.configure(text="Aux1 Auto")
+    # elif b['text'] == "Aux1 Auto":
+    #     b.configure(text="Aux1 Control")
+    # elif b['text'] == "Aux1 Control":
+    #     b.configure(text="Aux1 Manual")
 
-    if b['text'] == "Aux2 Manual":
-        b.configure(text="Aux2 Auto")
-    elif b['text'] == "Aux2 Auto":
-        b.configure(text="Aux2 Control")
-    elif b['text'] == "Aux2 Control":
-        b.configure(text="Aux2 Manual")
+    # if b['text'] == "Aux2 Manual":
+    #     b.configure(text="Aux2 Auto")
+    # elif b['text'] == "Aux2 Auto":
+    #     b.configure(text="Aux2 Control")
+    # elif b['text'] == "Aux2 Control":
+    #     b.configure(text="Aux2 Manual")
 
-def sys_mode_and_change(t,s,a1,a2):
+def sys_mode_and_change(b):
     global DATA_TO_SEND, CLASS, SIZE
     CLASS = 0x0000
     SIZE = 1
-    
+
     BITS_TO_SEND = struct.pack('ffff', -200,-200,-200,-200)
     send_data(BITS_TO_SEND)
     
-    buttons = [t,s,a1,a2]
-    for b in buttons:
-        if (b['text'] in ["Throttle Manual", "Throttle Control"]):
-            b.configure(text="Throttle Auto")
-        if (b['text'] in ["Steering Manual", "Steering Control"]):
-            b.configure(text="Steering Auto")
-        if (b['text'] in ["Aux1 Manual", "Aux1 Control"]):
-            b.configure(text="Aux1 Auto")
-        if (b['text'] in ["Aux2 Manual", "Aux2 Control"]):
-            b.configure(text="Aux2 Auto")
-    DATA_TO_SEND = [0b0,0b1,0b0,0b1,0b0,0b1,0b0,0b1]
-    
+    # buttons = [t,s,a1,a2]
+    # for b in buttons:
+    #     if (b['text'] in ["Throttle Manual", "Throttle Control"]):
+    #         b.configure(text="Throttle Auto")
+    #     if (b['text'] in ["Steering Manual", "Steering Control"]):
+    #         b.configure(text="Steering Auto")
+    #     if (b['text'] in ["Aux1 Manual", "Aux1 Control"]):
+    #         b.configure(text="Aux1 Auto")
+    #     if (b['text'] in ["Aux2 Manual", "Aux2 Control"]):
+    #         b.configure(text="Aux2 Auto")
+    # DATA_TO_SEND = [0b0,0b1,0b0,0b1,0b0,0b1,0b0,0b1]
+    DATA_TO_SEND = 0b11
+    b.configure(text="Resting Mode")
     send_header()
-    BITS_TO_SEND = struct.pack('B', array_to_bin(DATA_TO_SEND))
+    BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
     send_data(BITS_TO_SEND)
     
     
@@ -159,7 +180,8 @@ def act_comms(AC, t, s, tv, a):
         popup = Button(AC, text = "Bounds: -100% to 100%. Click to remove warning", command=lambda:popup.destroy(), font=("Courier", 18), highlightbackground="orange", bg="orange")
         popup.grid(row=2,column=2)
     else:
-        if manual_mode:
+        if manual_mode != 1:
+            
             BITS_TO_SEND = struct.pack('ffff', float(t.get()), float(s.get()), float(tv.get()), float(a.get()))
             send_data(BITS_TO_SEND)
         else:
@@ -167,7 +189,7 @@ def act_comms(AC, t, s, tv, a):
         
     
 def missing_warning(w):
-    popup = Button(w, text = "Enable manual mode! Click to remove warning", command=lambda:popup.destroy(), font=("Courier", 18), highlightbackground="orange", bg="orange")
+    popup = Button(w, text = "Enable manual/control mode! Click to remove warning", command=lambda:popup.destroy(), font=("Courier", 18), highlightbackground="orange", bg="orange")
     popup.grid(row=2,column=2)
             
 def kill(b):
@@ -219,15 +241,15 @@ def usr_thread():
     SM_frame.grid(row=2, column=0)
     act_label = Label(win, text = "Select Actuator Configuration", font=("Courier", 22), bg="#ff928b")
     act_label.grid(row=1, column=0, padx=(50,50), pady=(20,0))
-    throttle = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(throttle), text="Throttle Manual")
-    steering = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(steering), text="Steering Manual")
-    aux1 = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(aux1), text="Aux1 Manual")
-    aux2 = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(aux2), text="Aux2 Manual")
-    act_ok = Button(SM_frame, height = 2, width = 12, command=lambda:sys_mode(throttle, steering, aux1, aux2), text="Send Command")
-    throttle.pack(padx=(54,200), pady=(5,0))
-    steering.pack(padx=(200,54), pady=(5,0))
-    aux1.pack(padx=(54,200), pady=(5,0))
-    aux2.pack(padx=(200,54), pady=(5,0))
+    mode_button = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(mode_button), text="Manual Mode")
+    # steering = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(steering), text="Steering Manual")
+    # aux1 = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(aux1), text="Aux1 Manual")
+    # aux2 = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(aux2), text="Aux2 Manual")
+    act_ok = Button(SM_frame, height = 2, width = 12, command=lambda:sys_mode(mode_button), text="Send Command")
+    mode_button.pack(padx=(50,50), pady=(5,0))
+    # steering.pack(padx=(200,54), pady=(5,0))
+    # aux1.pack(padx=(54,200), pady=(5,0))
+    # aux2.pack(padx=(200,54), pady=(5,0))
     act_ok.pack(pady=(5,5))
     
     #sys_mode(throttle, steering, aux1, aux2)
@@ -274,7 +296,7 @@ def usr_thread():
     percent3.grid(row=3, column=2, sticky=W)
     percent4 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     percent4.grid(row=4, column=2, sticky=W)
-    act2_ok = Button(AC_frame, height = 2, width = 18, command=lambda:sys_mode_and_change(throttle, steering, aux1, aux2), text="Disable Manual Control", highlightbackground="red")
+    act2_ok = Button(AC_frame, height = 2, width = 18, command=lambda:sys_mode_and_change(mode_button), text="Disable Manual Control", highlightbackground="red")
     act2_ok.grid(row=5, column=0, columnspan=3)
     
     STATUS_frame = Frame(win)
