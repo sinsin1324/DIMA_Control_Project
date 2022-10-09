@@ -29,19 +29,10 @@ remote_device = None
 log = False
 win = Tk()
 popup = Button()
-t_entry = tv_entry = s_entry = a_entry = None
+t_entry = br_entry = s_entry = tm1_entry = tm2_entry = None
 manual_mode = 0
 
-# Boolean set true to safely end program
 exit = False
-
-# def array_to_bin(bit_arr):
-#     binval = 0b0
-#     i = len(bit_arr)-1
-#     for bit in bit_arr:
-#         binval += bit<<(i)
-#         i-=1
-#     return binval
 
 def init_Xbee():
     global device, remote_device
@@ -84,20 +75,9 @@ def sys_mode(m):
     elif "Rest" in m['text']:
         DATA_TO_SEND = 0b11
         manual_mode = 3
-    # buttons = [a2,a1,s,t]
-    # i=0
-    # for button in buttons:
-    #     if "Manual" in button['text']:
-    #         extra_header = True
-    #     elif "Auto" in button['text']:
-    #         DATA_TO_SEND[i+1] = 0b1
-    #     elif "Control" in button['text']:
-    #         DATA_TO_SEND[i] = 0b1
-    #     else:
-    #         print("Unknown Button Value")
-        # i+=2
+
     send_header()
-    # BITS_TO_SEND = struct.pack('B', array_to_bin(DATA_TO_SEND))
+    
     BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
     send_data(BITS_TO_SEND)
     if extra_header:
@@ -115,54 +95,20 @@ def sys_mode_change(b):
         b.configure(text="Resting Mode")
     elif "Rest" in b['text']:
         b.configure(text="Manual Mode")
-    
-    # if b['text'] == "Throttle Manual":
-    #     b.configure(text="Throttle Auto")
-    # elif b['text'] == "Throttle Auto":
-    #     b.configure(text="Throttle Control")
-    # elif b['text'] == "Throttle Control":
-    #     b.configure(text="Throttle Manual")
-    
-    # if b['text'] == "Steering Manual":
-    #     b.configure(text="Steering Auto")
-    # elif b['text'] == "Steering Auto":
-    #     b.configure(text="Steering Control")
-    # elif b['text'] == "Steering Control":
-    #     b.configure(text="Steering Manual")
 
-    # if b['text'] == "Aux1 Manual":
-    #     b.configure(text="Aux1 Auto")
-    # elif b['text'] == "Aux1 Auto":
-    #     b.configure(text="Aux1 Control")
-    # elif b['text'] == "Aux1 Control":
-    #     b.configure(text="Aux1 Manual")
-
-    # if b['text'] == "Aux2 Manual":
-    #     b.configure(text="Aux2 Auto")
-    # elif b['text'] == "Aux2 Auto":
-    #     b.configure(text="Aux2 Control")
-    # elif b['text'] == "Aux2 Control":
-    #     b.configure(text="Aux2 Manual")
-
-def sys_mode_and_change(b):
+def sys_mode_and_change(b, t_entry, br_entry, s_entry, tm1_entry, tm2_entry):
     global DATA_TO_SEND, CLASS, SIZE
     CLASS = 0x0000
     SIZE = 1
 
-    BITS_TO_SEND = struct.pack('ffff', -200,-200,-200,-200)
-    send_data(BITS_TO_SEND)
+    t_entry.set(0)
+    br_entry.set(0)
+    s_entry.set(0)
+    tm1_entry.set(0)
+    tm2_entry.set(0)
     
-    # buttons = [t,s,a1,a2]
-    # for b in buttons:
-    #     if (b['text'] in ["Throttle Manual", "Throttle Control"]):
-    #         b.configure(text="Throttle Auto")
-    #     if (b['text'] in ["Steering Manual", "Steering Control"]):
-    #         b.configure(text="Steering Auto")
-    #     if (b['text'] in ["Aux1 Manual", "Aux1 Control"]):
-    #         b.configure(text="Aux1 Auto")
-    #     if (b['text'] in ["Aux2 Manual", "Aux2 Control"]):
-    #         b.configure(text="Aux2 Auto")
-    # DATA_TO_SEND = [0b0,0b1,0b0,0b1,0b0,0b1,0b0,0b1]
+    BITS_TO_SEND = struct.pack('fffff', -200,-200,-200,-200, -200)
+    send_data(BITS_TO_SEND)
     DATA_TO_SEND = 0b11
     b.configure(text="Resting Mode")
     send_header()
@@ -170,19 +116,22 @@ def sys_mode_and_change(b):
     send_data(BITS_TO_SEND)
     
     
-def act_comms(AC, t, s, tv, a):
-    global CLASS, SIZE, t_entry, a_entry, s_entry, tv_entry
+def act_comms(AC, t, s, br, tm1, tm2):
+    global CLASS, SIZE
     
     CLASS = 0x0001
     SIZE = 4
     
-    if (float(t.get())>100 or float(s.get())>100 or float(tv.get())>100 or float(a.get())>100 or float(t.get())<-100 or float(s.get())<-100 or float(tv.get())<-100 or float(a.get())<-100):
+    if (float(t.get())>100 or float(s.get())>100 or float(br.get())>100 
+        or float(tm1.get())>100 or float(t.get())<-100 or float(s.get())<-100 
+        or float(br.get())<-100 or float(tm1.get())<-100 or float(tm2.get())>100 
+        or float(tm2.get())<-100):
         popup = Button(AC, text = "Bounds: -100% to 100%. Click to remove warning", command=lambda:popup.destroy(), font=("Courier", 18), highlightbackground="orange", bg="orange")
         popup.grid(row=2,column=2)
     else:
         if manual_mode != 1:
             
-            BITS_TO_SEND = struct.pack('ffff', float(t.get()), float(s.get()), float(tv.get()), float(a.get()))
+            BITS_TO_SEND = struct.pack('fffff', float(t.get()), float(s.get()), float(br.get()), float(tm1.get()), float(tm2.get()))
             send_data(BITS_TO_SEND)
         else:
             missing_warning(AC)
@@ -226,11 +175,11 @@ def cl_comms(b):
     CLASS = 0x0007
 
 def usr_thread():
-    global win, t_entry, a_entry, s_entry, tv_entry
+    global win, t_entry, tm1_entry, s_entry, br_entry, tm2_entry
 
     init_Xbee()
 
-    win.geometry("1080x720")
+    win.geometry("1080x560")
     win.title("DIMA Controller")
     win.configure(highlightbackground="#D3D3D3", bg="#D3D3D3")
     label = Label(win, text = "     DIMA CONTROLLER DASHBOARD", font=("Courier", 50), highlightbackground="#D3D3D3", bg="#D3D3D3")
@@ -240,17 +189,11 @@ def usr_thread():
     SM_frame = Frame(win, bg="#ff928b")
     SM_frame.grid(row=2, column=0)
     act_label = Label(win, text = "Select Actuator Configuration", font=("Courier", 22), bg="#ff928b")
-    act_label.grid(row=1, column=0, padx=(50,50), pady=(20,0))
-    mode_button = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(mode_button), text="Manual Mode")
-    # steering = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(steering), text="Steering Manual")
-    # aux1 = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(aux1), text="Aux1 Manual")
-    # aux2 = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode_change(aux2), text="Aux2 Manual")
-    act_ok = Button(SM_frame, height = 2, width = 12, command=lambda:sys_mode(mode_button), text="Send Command")
-    mode_button.pack(padx=(50,50), pady=(5,0))
-    # steering.pack(padx=(200,54), pady=(5,0))
-    # aux1.pack(padx=(54,200), pady=(5,0))
-    # aux2.pack(padx=(200,54), pady=(5,0))
-    act_ok.pack(pady=(5,5))
+    act_label.grid(row=1, column=0, padx=(50,50), pady=(30,0))
+    mode_button = Button(SM_frame, height = 3, width = 12, command=lambda:sys_mode_change(mode_button), text="Manual Mode")
+    act_ok = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode(mode_button), text="Send Command")
+    mode_button.pack(padx=(50,50), pady=(30,20))
+    act_ok.pack(pady=(0,30))
     
     #sys_mode(throttle, steering, aux1, aux2)
     
@@ -268,26 +211,28 @@ def usr_thread():
     AC_frame.rowconfigure(3, weight=1)
     AC_frame.rowconfigure(4, weight=1)
     AC_frame.rowconfigure(5, weight=1)
+    AC_frame.rowconfigure(6, weight=1)
     t_label = Label(AC_frame, text = "Throttle Level", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     t_label.grid(row=1, column=0, sticky=W, padx=(100,0))
     s_label = Label(AC_frame, text = "Steering Level", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     s_label.grid(row=2, column=0, sticky=W, padx=(100,0))
-    tv_label = Label(AC_frame, text = "Tail Velocity Level", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
-    tv_label.grid(row=3, column=0, sticky=W, padx=(100,0))
-    a_label = Label(AC_frame, text = "Aux2 Level", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
-    a_label.grid(row=4, column=0, sticky=W, padx=(100,0))
-    #t_entry = Entry(AC_frame, width=4, highlightthickness=1)
+    br_label = Label(AC_frame, text = "Break Level", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
+    br_label.grid(row=3, column=0, sticky=W, padx=(100,0))
+    tm1_label = Label(AC_frame, text = "Tail Motor 1 Level", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
+    tm1_label.grid(row=4, column=0, sticky=W, padx=(100,0))
+    tm2_label = Label(AC_frame, text = "Tail Motor 2 Level", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
+    tm2_label.grid(row=5, column=0, sticky=W, padx=(100,0))
     t_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     t_entry.grid(row=1, column=1)
-    #s_entry = Entry(AC_frame, width=4, highlightthickness=1)
     s_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     s_entry.grid(row=2, column=1)
-    #tv_entry = Entry(AC_frame, width=4, highlightthickness=1)
-    tv_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
-    tv_entry.grid(row=3, column=1)
-    #a_entry = Entry(AC_frame, width=4, highlightthickness=1)
-    a_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
-    a_entry.grid(row=4, column=1)
+    br_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
+    br_entry.grid(row=3, column=1)
+    tm1_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
+    tm1_entry.grid(row=4, column=1)
+    tm2_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
+    tm2_entry.grid(row=5, column=1)
+    # percentage labels for each actuator
     percent1 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     percent1.grid(row=1, column=2, sticky=W)
     percent2 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
@@ -296,8 +241,10 @@ def usr_thread():
     percent3.grid(row=3, column=2, sticky=W)
     percent4 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     percent4.grid(row=4, column=2, sticky=W)
-    act2_ok = Button(AC_frame, height = 2, width = 18, command=lambda:sys_mode_and_change(mode_button), text="Disable Manual Control", highlightbackground="red")
-    act2_ok.grid(row=5, column=0, columnspan=3)
+    percent5 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
+    percent5 .grid(row=5, column=2, sticky=W)
+    act2_ok = Button(AC_frame, height = 2, width = 18, command=lambda:sys_mode_and_change(mode_button, t_entry, br_entry, s_entry, tm1_entry, tm2_entry), text="Safely Enter Rest Mode", highlightbackground="red")
+    act2_ok.grid(row=6, column=0, columnspan=3)
     
     STATUS_frame = Frame(win)
     STATUS_frame.grid(row=3, column = 0)
@@ -321,18 +268,22 @@ def jtsn_thread():
         time.sleep(1)
 
 def slider_thread():
-    global t_entry, a_entry, s_entry, tv_entry
-    t, a, s, tv = 0,0,0,0
+    global t_entry, tm1_entry, s_entry, br_entry, tm2_entry
+    t, tm1, s, br, tm2 = 0,0,0,0,0
     while (t_entry == None):
         pass
     while (not exit):
-        if (t_entry.get() != t or a_entry.get() != a or s_entry.get() != s or tv_entry.get() != tv):
-            t = t_entry.get()
-            tv = tv_entry.get()
-            a = a_entry.get()
-            s = s_entry.get()
-            act_comms(win, t_entry, s_entry, tv_entry, a_entry)
-        time.sleep(0.1)
+        try:
+            if (t_entry.get() != t or tm1_entry.get() != tm1 or s_entry.get() != s or br_entry.get() != br or tm2_entry.get() != tm2):
+                t = t_entry.get()
+                br = br_entry.get()
+                tm1 = tm1_entry.get()
+                s = s_entry.get()
+                tm2 = tm2_entry.get()
+                act_comms(win, t_entry, s_entry, br_entry, tm1_entry, tm2_entry)
+            time.sleep(0.1)
+        except:
+            pass
         
 def main():
     global exit
@@ -341,14 +292,10 @@ def main():
     jtsn.start()
     sldr.start()
     usr_thread()
-    
     exit = True
     sldr.join()
     jtsn.join()
     sys.exit("Safely Closed")
     
-    
-    
-
 if __name__ == "__main__":
     main()

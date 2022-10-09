@@ -31,3 +31,10 @@ make
 
 GPS module detected on:
 /dev/gps0 OR /dev/ACM0
+
+GPS data:
+GNGLL - Longitude Lattitude
+GNVTG - Speed Data
+
+
+
