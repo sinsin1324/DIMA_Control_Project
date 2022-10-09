@@ -33,7 +33,7 @@ t_entry = br_entry = s_entry = tm1_entry = tm2_entry = None
 manual_mode = 0
 
 exit = False
-
+    
 def init_Xbee():
     global device, remote_device
     try:
