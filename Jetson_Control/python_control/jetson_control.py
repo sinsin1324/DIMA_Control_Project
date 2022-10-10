@@ -1,14 +1,26 @@
+import logging
+import subprocess
 from digi.xbee.devices import XBeeDevice
 import time
 import struct
 import threading
+from threading import Thread
 import maestro
+import serial
+from datetime import datetime
+# from pyspectator.temperature_reader import TemperatureReader
 
-# Port where local module is connected
-# PORT = "/dev/ttyUSB0"
-PORT = "/dev/ttyUSB0"
-# Baud rate of local module.
-BAUD_RATE = 230400
+# Ports
+XBEE_PORT = "/dev/ttyUSB0"
+TEENSY_PORT = "/dev/ttyACM0"
+
+# Baud Rates
+XBEE_BAUD_RATE = 230400
+TEENSY_BAUD_RATE = 115200
+
+# Initialize XBee and Teensy
+xbee_device = XBeeDevice(XBEE_PORT, XBEE_BAUD_RATE)
+teensy = serial.Serial(TEENSY_PORT, TEENSY_BAUD_RATE, timeout=1)
 
 # Maestro Initialisation
 servo = maestro.Controller()
@@ -27,13 +39,21 @@ command_q = []
 q_pos = -1
 q_lock = threading.Lock()
 manual_data = 0
+logging_status = False
 selected_mode_handler = None
+
 
 def servo_s_conversion(percentage):
     return ((percentage+100)/200 * rnge_s) + 4032
 
 def servo_b_conversion(percentage):
     return ((percentage+100)/200 * rnge_b) + 4992
+
+# sends two motor positions as a serial message to the teensy
+def send_serial(tail1, tail2):
+    global teensy
+    #write to teensy
+    
 
 def data_receive_callback(xbee_message):
     global header, CLASS, SIZE, manual_data
@@ -98,13 +118,50 @@ def manual_control(data):
     servos = [steering, thrust, brk]
     for x in range(3):
         servo.setTarget(channel+x, servos[x])
-
-def auto_control(data):
-    pass
+    send_serial(tail1, tail2)
+    
+# Read control commands from file and execute them accordingly    
+def auto_control():
+    global servo, target, rnge_s, rnge_b
+    with open("../data/commands.txt") as f:
+        lines = f.readlines()
+    for line in lines:
+        data = line.split(",")
+        header = data[0]
+        # header table
+        # 0x0: set motor position with [motor_id, position]
+        # 0x1: set motor speed with [motor_id, speed]
+        # 0x2: sleep for [time] seconds
+        # 0x3: kill robot
+        # 0x4: revive robot
+        # 0x5: toggle logging
+            
+        for x in range(2):
+            data[x] = servo_s_conversion(data[x])
+        data[2] = servo_b_conversion(data[2])
+        
+        steering, thrust, brk, tail1, tail2  = [int(x) for x in data]
+        servos = [steering, thrust, brk]
+        for x in range(3):
+            servo.setTarget(channel+x, servos[x])
+        send_serial(tail1, tail2)
+        time.sleep(0.1)
+    
+    
 
 def control_loop_control(data):
-    pass
-
+    global servo, target, rnge_s, rnge_b
+    print(data)
+    data = list(data)
+    for x in range(2):
+        data[x] = servo_s_conversion(data[x])
+    data[2] = servo_b_conversion(data[2])
+    
+    steering, thrust, brk = [int(x) for x in data[:3]]
+    servos = [steering, thrust, brk]
+    for x in range(3):
+        servo.setTarget(channel+x, servos[x])
+    
 def rest_control(placeholder):
     global servo, target, rnge_s, rnge_b
     data = [0,0,0,0,0]
@@ -129,8 +186,34 @@ def kill():
 def revive():
     pass
 
-def toggle_logging():
-    pass
+def get_tail_data():
+    #Decode tail data from teensy serial data
+    return ""
+
+def logger_thread():
+    global logging_status
+    log_frequency = 15
+    current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    logfile = open("../data/logs/" + current_datetime + ".csv", "w")
+    while logging_status:
+        # get linux cpu temperature
+        cpu_temp = subprocess.check_output(
+            "cat /sys/class/thermal/thermal_zone0/temp", shell=True)
+        logfile.write(datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ",")
+        for y in range(log_frequency):
+            for x in range(3):
+                logfile.write(str(servo.getPosition(channel+x)) + ",")
+            logfile.write(get_tail_data() + "\n")
+    logfile.close()
+
+def toggle_logging(placeholder):
+    global logging_status
+    if not logging_status:
+        logging_status = True
+        logger = Thread(target=logger_thread)
+        logger.start()
+    else:
+        logging_status = False
 
 def operating_mode(data):
     global selected_mode_handler
@@ -144,22 +227,26 @@ def operating_mode(data):
     if data in [1, 3]:
         selected_mode_handler(data)
 
-class_dict = {0x0:operating_mode}
+class_dict = {0x0:operating_mode,
+              0x4:toggle_logging,
+              0x5:toggle_logging,}
 
 def main():
-    global channel, servo
+    global channel, servo, xbee_device
     print(" +-----------------------------------------+")
-    print(" |         XBee Receive Data Sample        |")
+    print(" |        Jetson Receive Data Sample       |")
     print(" +-----------------------------------------+\n")
 
-    # initialise servo
-    device = XBeeDevice(PORT, BAUD_RATE)
+    # Enter teensy motor control mode
+    # teensy.write(b'c')
+    
+    # Initialise servo variables
     servo.setAccel(channel, 4)  # set servo 0 acceleration to 4
     servo.setSpeed(channel, 0)  # set speed of servo 0
 
     try:
-        device.open()
-        device.add_data_received_callback(data_receive_callback)
+        xbee_device.open()
+        xbee_device.add_data_received_callback(data_receive_callback)
         while (True):
             if (len(command_q) > 0):
                 # changed command_q[-1][0] to [0][0] NB
@@ -169,9 +256,13 @@ def main():
                 class_dict[cls](data)
 
     finally:
-        if device is not None and device.is_open():
-            device.close()
-
+        if xbee_device is not None and xbee_device.is_open():
+            xbee_device.close()
+        # exit teensy motor control mode
+        # teensy.write(b'e')
+        teensy.close()
+        servo.close()
+        print("\nSafely closed")
 
 if __name__ == '__main__':
     main()

@@ -56,3 +56,10 @@ pip3 install --upgrade setuptools
 pip3 install --upgrade wheel
 sudo apt install libpython3.7-dev
 pip3 install adafruit-circuitpython-bno055
+
+change fan settings:
+/etc/automagic-fan/config.json
+sudo service automagic-fan restart
+
+monitor processor temperature in python:
+print("CPU Temp: " + str(int(cpu_temp.decode())/1000))
