@@ -43,3 +43,16 @@ reboot
 SENSOR_ID=0
 FRAMERATE=60
 get live feed
+
+To Install bno055 library
+sudo apt update -y
+sudo apt install python3.7
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
+sudo update-alternatives --config python3
+                        -SELECT 2, THEN PRESS ENTER
+pip3 install --upgrade pip
+pip3 install --upgrade setuptools
+pip3 install --upgrade wheel
+sudo apt install libpython3.7-dev
+pip3 install adafruit_bno055
