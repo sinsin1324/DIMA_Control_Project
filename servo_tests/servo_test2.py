@@ -46,7 +46,7 @@ def control(c):
     #	print("going to: ", x)
     # Time.sleep(2)
     servo.setTarget(c, x)
-    sleep(2)
+    time.sleep(2)
     if c == 0 or c == 1:
         servo.setTarget(c,target)
         # time.sleep(3)
