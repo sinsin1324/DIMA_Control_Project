@@ -36,5 +36,10 @@ GPS data:
 GNGLL - Longitude Lattitude
 GNVTG - Speed Data
 
-
-
+Arducam Setup:
+flash jetson with jetpack 6.0
+go to jetson-io.py and enable dual imx477
+reboot
+SENSOR_ID=0
+FRAMERATE=60
+get live feed
