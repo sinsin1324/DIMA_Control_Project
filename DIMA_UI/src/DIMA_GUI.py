@@ -191,7 +191,7 @@ def usr_thread():
     act_label = Label(win, text = "Select Actuator Configuration", font=("Courier", 22), bg="#ff928b")
     act_label.grid(row=1, column=0, padx=(50,50), pady=(30,0))
     mode_button = Button(SM_frame, height = 3, width = 12, command=lambda:sys_mode_change(mode_button), text="Manual Mode")
-    act_ok = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode(mode_button), text="Send Command")
+    act_ok = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode(mode_button), text="Apply Mode")
     mode_button.pack(padx=(50,50), pady=(30,20))
     act_ok.pack(pady=(0,30))
     
