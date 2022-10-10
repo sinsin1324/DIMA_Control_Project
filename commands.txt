@@ -55,4 +55,4 @@ pip3 install --upgrade pip
 pip3 install --upgrade setuptools
 pip3 install --upgrade wheel
 sudo apt install libpython3.7-dev
-pip3 install adafruit_bno055
+pip3 install adafruit-circuitpython-bno055
