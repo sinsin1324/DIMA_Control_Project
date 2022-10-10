@@ -42,7 +42,8 @@ go to jetson-io.py and enable dual imx477
 reboot
 SENSOR_ID=0
 FRAMERATE=60
-get live feed
+gst-launch-1.0 nvarguscamerasrc sensor-id=$SENSOR_ID ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" ! nvvidconv ! nvoverlaysink
+
 
 To Install bno055 library
 sudo apt update -y

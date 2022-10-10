@@ -1,4 +1,3 @@
-import logging
 import subprocess
 from digi.xbee.devices import XBeeDevice
 import time
