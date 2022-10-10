@@ -1,7 +1,5 @@
-from click import command
 from digi.xbee.devices import XBeeDevice
 import time
-import sys
 import struct
 import threading
 import maestro
@@ -26,10 +24,8 @@ header = False
 CLASS = 0x0000
 SIZE = 0
 command_q = []
-curr_command = []
 q_pos = -1
 q_lock = threading.Lock()
-curr_lock = threading.Lock()
 manual_data = 0
 selected_mode_handler = None
 
