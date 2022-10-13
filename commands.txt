@@ -42,7 +42,12 @@ go to jetson-io.py and enable dual imx477
 reboot
 SENSOR_ID=0
 FRAMERATE=60
+get live feed
 gst-launch-1.0 nvarguscamerasrc sensor-id=$SENSOR_ID ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" ! nvvidconv ! nvoverlaysink
+
+gst-launch-1.0 nvarguscamerasrc sensor-id=$SENSOR_ID ! "video/x-raw(memory:NVMM),width=4032,height=3040,framerate=$FRAMERATE/1" ! nvvidconv ! "video/x-raw(memory:NVMM),width=1432,height=1080,framerate=$FRAMERATE/1" ! nvoverlaysink
+
+gst-launch-1.0 nvarguscamerasrc sensor-id=$SENSOR_ID ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" ! nvvidconv ! nveglglessink
 
 
 To Install bno055 library
@@ -64,3 +69,11 @@ sudo service automagic-fan restart
 
 monitor processor temperature in python:
 print("CPU Temp: " + str(int(cpu_temp.decode())/1000))
+
+GIT NO AUTH FIX
+git remote set-url origin https://YOUR_TOKEN_HERE@github.com/your_user/your_project.git
+
+INSTALL LIBHIDBULSHIT
+https://github.com/libusb/hidapi/blob/master/BUILD.cmake.md
+Follow instructions to build standalone, but then copy:
+sudo cp build/libusb/libhidapi-libusb.so /usr/lib/aarch64-linux-gnu/
