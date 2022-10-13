@@ -19,7 +19,7 @@ TEENSY_BAUD_RATE = 115200
 
 # Initialize XBee and Teensy
 xbee_device = XBeeDevice(XBEE_PORT, XBEE_BAUD_RATE)
-teensy = serial.Serial(TEENSY_PORT, TEENSY_BAUD_RATE, timeout=1)
+#teensy = serial.Serial(TEENSY_PORT, TEENSY_BAUD_RATE, timeout=1)
 
 # Maestro Initialisation
 servo = maestro.Controller()
@@ -133,7 +133,7 @@ def auto_control():
         # 0x2: sleep for [time] seconds
         # 0x3: kill robot
         # 0x4: revive robot
-        # 0x5: toggle logging
+        # 0x5: toggle logging#
             
         for x in range(2):
             data[x] = servo_s_conversion(data[x])

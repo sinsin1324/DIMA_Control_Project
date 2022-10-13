@@ -1,0 +1,2 @@
+/pkgconfig/hidapi-hidraw.pc
+/pkgconfig/hidapi-libusb.pc

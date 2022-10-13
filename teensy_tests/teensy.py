@@ -1,24 +1,28 @@
-import usb.core
-import usb.util
+import hid
 
-# find our device
-dev = usb.core.find(idVendor=0x16c0, idProduct=0x0486)
-if dev is None:
-    raise ValueError('Device not found')
-dev.set_configuration()
-cfg = dev.get_active_configuration()
-intf = cfg[(0,0)]
+vid = 0x16c0	# Change it for your device
+pid = 0x0486	# Change it for your device
+# 
+# encoded 1;1;0;0;0;0;0;2;1;0;0;0;0;0|
 
-ep = usb.util.find_descriptor(
-    intf,
-    # match the first OUT endpoint
-    custom_match = \
-    lambda e: \
-        usb.util.endpoint_direction(e.bEndpointAddress) == \
-        usb.util.ENDPOINT_OUT)
 
-assert ep is not None
-
-# write the data
-ep.write('1;1;0;0;0;0;0;2;1;0;0;0;0;0|')
-print(ep.read(64))
+# 1;0;0;0;0;0;0;2;0;0;0;0;0;0| exits motor control
+# with hid.Device(vid, pid) as h:
+#     print(f'Device manufacturer: {h.manufacturer}')
+#     print(f'Product: {h.product}')
+#     print(f'Serial Number: {h.serial}')
+#     res = h.write('1;0;0;0;0;0;0;2;0;0;0;0;0;0|'.encode('utf-8'))
+#     print(res)
+exitc = '1;0;0;0;0;0;0;2;0;0;0;0;0;0|'.encode()
+enterc = '1;1;0;0;0;0;0;2;1;0;0;0;0;0|'.encode()
+c1 = '1;2;0;0;0;0;0;2;2;0;0;0;0;0|'.encode()
+with open('/dev/hidraw0', 'rb+') as f:
+    f.flush()
+    res = f.write(exitc)
+    print(res)
+    res = f.write(enterc)
+    print(res)
+    res = f.write(c1)
+    print(res)
+    res = f.write(exitc)
+    

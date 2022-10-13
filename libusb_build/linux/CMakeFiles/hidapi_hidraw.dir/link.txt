@@ -1,0 +1,1 @@
+/usr/bin/cc -fPIC   -shared -Wl,-soname,libhidapi-hidraw.so.0 -o libhidapi-hidraw.so.0.13.0 CMakeFiles/hidapi_hidraw.dir/hid.c.o /lib/aarch64-linux-gnu/libudev.so -lpthread 
