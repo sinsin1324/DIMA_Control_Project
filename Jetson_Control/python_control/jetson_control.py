@@ -109,12 +109,13 @@ def manual_control(data):
     global servo, target, rnge_s, rnge_b
     print(data)
     data = list(data)
+    print(data)
     for x in range(2):
         data[x] = servo_s_conversion(data[x])
     data[2] = servo_b_conversion(data[2])
 
-    steering, thrust, brk, tail1, tail2 = [int(x) for x in data]
-    servos = [steering, thrust, brk]
+    thrust, steering, brk, tail1, tail2 = [int(x) for x in data]
+    servos = [thrust, steering, brk]
     for x in range(3):
         servo.setTarget(channel+x, servos[x])
     send_serial(tail1, tail2)
