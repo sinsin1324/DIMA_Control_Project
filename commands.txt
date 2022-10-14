@@ -77,3 +77,6 @@ INSTALL LIBHIDBULSHIT
 https://github.com/libusb/hidapi/blob/master/BUILD.cmake.md
 Follow instructions to build standalone, but then copy:
 sudo cp build/libusb/libhidapi-libusb.so /usr/lib/aarch64-linux-gnu/
+
+OpenCV installation for no bugs:
+https://jkjung-avt.github.io/opencv-on-nano/
