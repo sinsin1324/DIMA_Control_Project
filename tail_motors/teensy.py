@@ -18,5 +18,4 @@ while True:
     user_input = input("Enter a command: ")
     ser.write(user_input.encode())
     print(ser.readline().strip().decode())
-    print(ser.readline().strip().decode())
     
