@@ -68,7 +68,9 @@ change fan settings:
 sudo service automagic-fan restart
 
 monitor processor temperature in python:
+from pyspectator.temperature_reader import TemperatureReader
 print("CPU Temp: " + str(int(cpu_temp.decode())/1000))
+cat /sys/class/thermal/thermal_zone0/temp
 
 GIT NO AUTH FIX
 git remote set-url origin https://YOUR_TOKEN_HERE@github.com/your_user/your_project.git

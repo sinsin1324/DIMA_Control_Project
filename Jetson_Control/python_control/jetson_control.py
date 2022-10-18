@@ -1,4 +1,4 @@
-import subprocess
+# import subprocess
 from digi.xbee.devices import XBeeDevice
 import time
 import struct
@@ -19,28 +19,61 @@ TEENSY_BAUD_RATE = 115200
 
 # Initialize XBee and Teensy
 xbee_device = XBeeDevice(XBEE_PORT, XBEE_BAUD_RATE)
-#teensy = serial.Serial(TEENSY_PORT, TEENSY_BAUD_RATE, timeout=1)
+# teensy = serial.Serial(TEENSY_PORT, TEENSY_BAUD_RATE)            !!!!!!!!!!!!!!!!!!!
 
 # Maestro Initialisation
 servo = maestro.Controller()
 target = 0
 min_pos = 800*4
 max_pos = 2000*4
-channel = 0
+channel0 = 0
 rnge_s = 7996-4032
 rnge_b = 7360-4992
 
 i = 0
 header = False
-CLASS = 0x0000
-SIZE = 0
+CLASS = 0x0000 # Note these are not constants
+SIZE = 0 # Read above comment
+
+# Queue Variables
 command_q = []
 q_pos = -1
 q_lock = threading.Lock()
+
+# For Manual Mode
 manual_data = 0
+
+# Logging
 logging_status = False
+
 selected_mode_handler = None
 
+# Motor Positions
+thrust_pos = 0
+steer_pos = 0
+break_pos = 0
+tail1_pos = 0
+tail2_pos = 0
+
+# Motor ID; Motor State; Command Position; Command Velocity; Command Kp;
+# Command Kd; Command Current; ...(repeat for motor 2); Logbit
+# 1;0;0;0;0;0;0;2;0;0;0;0;0;0;0 - Exit Motor Control
+# 1;1;0;0;0;0;0;2;1;0;0;0;0;0;0 - Enter Motor Control
+# 1;2;0;0;0;0;0;2;2;0;0;0;0;0;0 - Set Origin Position
+# 1;3;0;0;3;2;0;2;3;0;0;3;2;0;0 - Simple Impediance Control
+# 1;3;1;0;1;0;0;2;3;1;0;1;0;0;0 - Simple Position Control
+# 1;3;0;1;0;1;0;2;3;0;1;0;1;0;0 - Simple Velocity Control
+EXIT_MOTOR_CONTROL = "1;0;0;0;0;0;0;2;0;0;0;0;0;0;0|"
+ENTER_MOTOR_CONTROL = "1;1;0;0;0;0;0;2;1;0;0;0;0;0;0|"
+SET_ORIGIN_POSITION = "1;2;0;0;0;0;0;2;2;0;0;0;0;0;0|"
+
+tail_command = [1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0]
+
+# def init_teensy():                                                !!!!!!!!!!!!!!!!!!!
+    # global teensy
+    # teensy.write(EXIT_MOTOR_CONTROL)
+    # teensy.write(ENTER_MOTOR_CONTROL)
+    # teensy.write(SET_ORIGIN_POSITION)
 
 def servo_s_conversion(percentage):
     return ((percentage+100)/200 * rnge_s) + 4032
@@ -48,81 +81,79 @@ def servo_s_conversion(percentage):
 def servo_b_conversion(percentage):
     return ((percentage+100)/200 * rnge_b) + 4992
 
-# sends two motor positions as a serial message to the teensy
-def send_serial(tail1, tail2):
-    global teensy
-    #write to teensy
-    
+# sends two motor positions as a serial message to the teensy       !!!!!!!!!!!!!!!!!!
+# def send_to_teensy():
+#     global teensy, tail_command
+#     msg = ""
+#     for c in 13:
+#         msg += str(tail_command[c]) + ";"
+#     msg += str(tail_command[13]) + "|"
+#     teensy.write(msg)
 
 def data_receive_callback(xbee_message):
     global header, CLASS, SIZE, manual_data
     var = None
     message = xbee_message.data
     if not header:
-        var = struct.unpack('HH', message)
-        CLASS = var[0]
-        SIZE = var[1]
+        var = struct.unpack('B', message)
+        CLASS = var[0] >> 4
+        SIZE = var[0] & 0x0F
         header=True
         if SIZE == 0:
-            if CLASS == 0x0002:
-                print("Robot Killed")
+            if CLASS == 0x2:
                 q_lock.acquire()
                 command_q.append([CLASS, 'k'])
                 q_lock.release()
-            elif CLASS == 0X0003:
-                print("Robot Revived")
+                print("Robot Killed")
+            elif CLASS == 0X3:
                 q_lock.acquire()
                 command_q.append([CLASS, 'r'])
                 q_lock.release()
-            elif CLASS == 0X0004:
-                print("Logging Enabled")
+                print("Robot Revived")
+            elif CLASS == 0X4:
                 q_lock.acquire()
                 command_q.append([CLASS, 'l'])
                 q_lock.release()
-            elif CLASS == 0X0005:
-                print("Logging Disabled")
+                print("Logging Enabled")
+            elif CLASS == 0X5:
                 q_lock.acquire()
                 command_q.append([CLASS, 'n'])
                 q_lock.release()
+                print("Logging Disabled")
             header=False
     else:
-        if CLASS == 0x0000:
+        if CLASS == 0x0:
             var = struct.unpack('B', message)
-            print(bin(var[0]))
             q_lock.acquire()
             command_q.append([CLASS, var[0]])
             q_lock.release()
             header=False
-        elif CLASS == 0x0001:
+            print(bin(var[0]))
+        elif CLASS == 0x1:
             var = struct.unpack('fffff', message)
-            if (var[0] == -200):
-                header=False
+            if (var[0] != -10000):
+                selected_mode_handler(var)
             else:
-                # q_lock.acquire()
-                # command_q.append([CLASS, var])
-                # q_lock.release()
-                manual_data = var
-                selected_mode_handler(manual_data)
+                header = False
 
 # Command Handler
 def manual_control(data):
-    global servo, target, rnge_s, rnge_b
-    print(data)
-    data = list(data)
-    print(data)
-    for x in range(2):
-        data[x] = servo_s_conversion(data[x])
-    data[2] = servo_b_conversion(data[2])
-
-    thrust, steering, brk, tail1, tail2 = [int(x) for x in data]
-    servos = [thrust, steering, brk]
+    global servo, target, steer_pos, \
+    thrust_pos, break_pos, tail1_pos, tail2_pos
+    data = list(int (x) for x in data)
+    servos = [data[0], data[1], data[2]]
     for x in range(3):
-        servo.setTarget(channel+x, servos[x])
-    send_serial(tail1, tail2)
+        servo.setTarget(channel0+x, servos[x])
+    tail_command[2] = data[3]
+    tail_command[9] = data[4]
+    # send_to_teensy()                                              !!!!!!!!!!!!!!!!!!!
+    steer_pos, thrust_pos, break_pos, tail1_pos, tail2_pos = data
+    print(data)
     
 # Read control commands from file and execute them accordingly    
 def auto_control():
-    global servo, target, rnge_s, rnge_b
+    global servo, target, steer_pos, \
+    thrust_pos, break_pos, tail1_pos, tail2_pos
     with open("../data/commands.txt") as f:
         lines = f.readlines()
     for line in lines:
@@ -134,51 +165,47 @@ def auto_control():
         # 0x2: sleep for [time] seconds
         # 0x3: kill robot
         # 0x4: revive robot
-        # 0x5: toggle logging#
-            
-        for x in range(2):
-            data[x] = servo_s_conversion(data[x])
-        data[2] = servo_b_conversion(data[2])
+        # 0x5: toggle logging
         
-        steering, thrust, brk, tail1, tail2  = [int(x) for x in data]
-        servos = [steering, thrust, brk]
+        servos = [data[0], data[1], data[2]]
+
         for x in range(3):
-            servo.setTarget(channel+x, servos[x])
-        send_serial(tail1, tail2)
+            servo.setTarget(channel0+x, servos[x])
+        tail_command[2] = data[3]
+        tail_command[9] = data[4]
+        # send_to_teensy()                                     !!!!!!!!!!!!!!!!!!!
         time.sleep(0.1)
     
     
 
 def control_loop_control(data):
-    global servo, target, rnge_s, rnge_b
-    print(data)
+    global servo, target, steer_pos, \
+    thrust_pos, break_pos, tail1_pos, tail2_pos
+
     data = list(data)
-    for x in range(2):
-        data[x] = servo_s_conversion(data[x])
-    data[2] = servo_b_conversion(data[2])
-    
-    steering, thrust, brk = [int(x) for x in data[:3]]
-    servos = [steering, thrust, brk]
+    servos = [data[0], data[1], data[2]]
     for x in range(3):
-        servo.setTarget(channel+x, servos[x])
+        servo.setTarget(channel0+x, servos[x])
+    
+    steer_pos, thrust_pos, break_pos, tail1_pos, tail2_pos = data
+    print(data)
     
 def rest_control(placeholder):
-    global servo, target, rnge_s, rnge_b
+    global servo, target, steer_pos, \
+    thrust_pos, break_pos, tail1_pos, tail2_pos
     data = [0,0,0,0,0]
-    for x in range(2):
-        data[x] = servo_s_conversion(data[x])
-    data[2] = servo_b_conversion(data[2])
+    for x in range(3):
+        servo.setSpeed(channel0+x, 5)
+    for x in range(3):
+        servo.setTarget(channel0+x, data[x])
+    tail_command[2] = data[3]
+    tail_command[9] = data[4]
+    # send_to_teensy()                                          !!!!!!!!!!!!!!!!!!!
+    time.sleep(2)
+    for x in range(3):
+        servo.setSpeed(channel0+x, 0)
+    steer_pos, thrust_pos, break_pos, tail1_pos, tail2_pos = data
     
-    steering, thrust, brk, tail1, tail2 = [int(x) for x in data]
-    for x in range(3):
-        servo.setSpeed(channel+x, 5)
-    servos = [steering, thrust, brk]
-    for x in range(3):
-        servo.setTarget(channel+x, servos[x])
-    time.sleep(4)
-    for x in range(3):
-        print("Servo " + str(x) + " at " + str(servo.getPosition(channel+x)))
-        servo.setSpeed(channel+x, 0)
         
 def kill():
     pass
@@ -191,19 +218,19 @@ def get_tail_data():
     return ""
 
 def logger_thread():
-    global logging_status
-    log_frequency = 15
+    global logging_status, steer_pos, \
+    thrust_pos, break_pos, tail1_pos, tail2_pos
+    log_frequency = 20
     current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logfile = open("../data/logs/" + current_datetime + ".csv", "w")
     while logging_status:
         # get linux cpu temperature
-        cpu_temp = subprocess.check_output(
-            "cat /sys/class/thermal/thermal_zone0/temp", shell=True)
+        # cpu_temp = subprocess.check_output(
+        #     "cat /sys/class/thermal/thermal_zone0/temp", shell=True)
         logfile.write(datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ",")
         for y in range(log_frequency):
-            for x in range(3):
-                logfile.write(str(servo.getPosition(channel+x)) + ",")
-            logfile.write(get_tail_data() + "\n")
+            logfile.write(str(steer_pos) + "," + str(thrust_pos) + "," + 
+            str(break_pos) + "," + str(tail1_pos) + "," + str(tail2_pos))
     logfile.close()
 
 def toggle_logging(placeholder):
@@ -232,17 +259,17 @@ class_dict = {0x0:operating_mode,
               0x5:toggle_logging,}
 
 def main():
-    global channel, servo, xbee_device
+    global channel0, servo, xbee_device # , teensy                  !!!!!!!!!!!!!!!!!!!
     print(" +-----------------------------------------+")
     print(" |        Jetson Receive Data Sample       |")
     print(" +-----------------------------------------+\n")
-
-    # Enter teensy motor control mode
-    # teensy.write(b'c')
     
     # Initialise servo variables
-    servo.setAccel(channel, 4)  # set servo 0 acceleration to 4
-    servo.setSpeed(channel, 0)  # set speed of servo 0
+    servo.setAccel(channel0, 4)  # set servo 0 acceleration to 4
+    servo.setSpeed(channel0, 0)  # set speed of servo 0
+
+    # Initialise tail motors
+    # init_teensy()                                                 !!!!!!!!!!!!!!!!!!!
 
     try:
         xbee_device.open()
@@ -259,8 +286,7 @@ def main():
         if xbee_device is not None and xbee_device.is_open():
             xbee_device.close()
         # exit teensy motor control mode
-        # teensy.write(b'e')
-        teensy.close()
+        # teensy.close()                                            !!!!!!!!!!!!!!!!!!!
         servo.close()
         print("\nSafely closed")
 
