@@ -8,20 +8,19 @@ from digi.xbee.devices import XBeeDevice
 from threading import Thread
 import datetime
 import time
-
-from numpy import s_
 from pygments import highlight
+import math
 
 # Port where local module is connected to.
 PORT = "/dev/tty.usbserial-DN03133I"
 # Baud rate of local module.
 BAUD_RATE = 230400
 DATA_TO_SEND = None
-CLASS = 0x0000
+CLASS = 0x0
 SIZE = 0
 REMOTE_NODE_ID = "ROUTER"
-#0013A20041064451 for router
-#0013A20041064456 coordinator
+# 0013A20041064451 for router
+# 0013A20041064456 coordinator
 
 device = XBeeDevice(PORT, BAUD_RATE)
 remote_device = None
@@ -33,7 +32,22 @@ t_entry = br_entry = s_entry = tm1_entry = tm2_entry = None
 manual_mode = 0
 
 exit = False
-    
+
+# Servo motor ranges
+raw_rnge_s = [7994, 4032]
+rnge_s = raw_rnge_s[1] - raw_rnge_s[0]
+neg_ends_s = [4032, 5814]
+pos_ends_s = [6214, 7996]
+center_s = raw_rnge_s[0] + raw_rnge_s[1] / 2
+deadzone_s = [5814, 6214]
+neg_rnge_s = neg_ends_s[1] - neg_ends_s[0]
+pos_rnge_s = pos_ends_s[1] - pos_ends_s[0]
+
+raw_rnge_b = [4992,7360]
+rnge_b = raw_rnge_b[1] - raw_rnge_b[0]
+center_b = raw_rnge_b[0] + raw_rnge_b[1] / 2
+
+
 def init_Xbee():
     global device, remote_device
     try:
@@ -47,12 +61,29 @@ def init_Xbee():
     except:
         print("Could not open port to Xbee")
 
+def servo_s_conversion(percentage):
+    global neg_rnge_s, pos_rnge_s, neg_ends_s, pos_ends_s
+    if percentage < 0:
+        return (int) (((percentage+100)/99 * neg_rnge_s) + neg_ends_s[0]) 
+    return (int) (((percentage)/101 * pos_rnge_s) + pos_ends_s[0])
+
+
+def servo_b_conversion(percentage):
+    global rnge_b
+    return (int)(((percentage+100)/200 * rnge_b) + 4992)
+
+def tm1_conversion(percentage):
+    return percentage
+
+def tm2_conversion(percentage):
+    return percentage
+
 def send_data(BITS_TO_SEND):
     device.send_data(remote_device, BITS_TO_SEND)
 
 def send_header():
     global CLASS, SIZE
-    HEADER = struct.pack('HH', CLASS, SIZE)
+    HEADER = struct.pack('B', (CLASS<<4) + SIZE)
     send_data(HEADER)
     print(HEADER)
 
@@ -60,27 +91,24 @@ def sys_mode(m):
     global DATA_TO_SEND, CLASS, SIZE, manual_mode
     CLASS = 0x0000
     SIZE = 1
-    DATA_TO_SEND = 0b00
-    extra_header = False
-    if "Manual" in m['text']:
-        extra_header = True
-        manual_mode = 0
-    elif "Auto" in m['text']:
-        DATA_TO_SEND = 0b01
-        manual_mode = 1
-    elif "Control" in m['text']:
-        extra_header = True
-        DATA_TO_SEND = 0b10
-        manual_mode = 2
-    elif "Rest" in m['text']:
-        DATA_TO_SEND = 0b11
-        manual_mode = 3
+    # select mode based on button text
+    mode_dict = {
+        "Manual Mode": 0,
+        "Auto Mode": 1,
+        "Control Mode": 2,
+        "Rest Mode": 3
+    }
+
+    mode_num = mode_dict[m]
+    DATA_TO_SEND  = mode_num
+    manual_mode = mode_num
 
     send_header()
     
     BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
     send_data(BITS_TO_SEND)
-    if extra_header:
+
+    if m in ["Manual Mode", "Control Mode"]:
         CLASS = 0x0001
         SIZE = 4
         send_header()
@@ -100,20 +128,23 @@ def sys_mode_and_change(b, t_entry, br_entry, s_entry, tm1_entry, tm2_entry):
     global DATA_TO_SEND, CLASS, SIZE
     CLASS = 0x0000
     SIZE = 1
+    
+    BITS_TO_SEND = struct.pack('fffff',-10000,-10000,-10000,-10000,-10000)
+    send_data(BITS_TO_SEND)
+    time.sleep(0.1)
+    send_header()
+
+    DATA_TO_SEND = 0b11
+    BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
+    send_data(BITS_TO_SEND)
 
     t_entry.set(0)
     br_entry.set(0)
     s_entry.set(0)
     tm1_entry.set(0)
     tm2_entry.set(0)
-    
-    BITS_TO_SEND = struct.pack('fffff', -200,-200,-200,-200, -200)
-    send_data(BITS_TO_SEND)
-    DATA_TO_SEND = 0b11
     b.configure(text="Resting Mode")
-    send_header()
-    BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
-    send_data(BITS_TO_SEND)
+    manual_mode = 3
     
     
 def act_comms(AC, t, s, br, tm1, tm2):
@@ -121,20 +152,21 @@ def act_comms(AC, t, s, br, tm1, tm2):
     
     CLASS = 0x0001
     SIZE = 4
+    t_val = t.get()
+    s_val = -s.get()    
+    br_val = br.get()
+    tm1_val = tm1.get()
+    tm2_val = tm2.get()
     
-    if (float(t.get())>100 or float(s.get())>100 or float(br.get())>100 
-        or float(tm1.get())>100 or float(t.get())<-100 or float(s.get())<-100 
-        or float(br.get())<-100 or float(tm1.get())<-100 or float(tm2.get())>100 
-        or float(tm2.get())<-100):
-        popup = Button(AC, text = "Bounds: -100% to 100%. Click to remove warning", command=lambda:popup.destroy(), font=("Courier", 18), highlightbackground="orange", bg="orange")
-        popup.grid(row=2,column=2)
+    if manual_mode != 1:
+        BITS_TO_SEND = struct.pack('fffff', servo_s_conversion(t_val),
+            servo_s_conversion(s_val), servo_b_conversion(br_val),
+            tm1_conversion(tm1_val), tm2_conversion(tm2_val))
+        send_data(BITS_TO_SEND)
+        print(servo_s_conversion(t_val), servo_s_conversion(s_val), 
+        servo_b_conversion(br_val), tm1_conversion(tm1_val), tm2_conversion(tm2_val))
     else:
-        if manual_mode != 1:
-            
-            BITS_TO_SEND = struct.pack('fffff', float(t.get()), float(s.get()), float(br.get()), float(tm1.get()), float(tm2.get()))
-            send_data(BITS_TO_SEND)
-        else:
-            missing_warning(AC)
+        missing_warning(AC)
         
     
 def missing_warning(w):
@@ -191,7 +223,7 @@ def usr_thread():
     act_label = Label(win, text = "Select Actuator Configuration", font=("Courier", 22), bg="#ff928b")
     act_label.grid(row=1, column=0, padx=(50,50), pady=(30,0))
     mode_button = Button(SM_frame, height = 3, width = 12, command=lambda:sys_mode_change(mode_button), text="Manual Mode")
-    act_ok = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode(mode_button), text="Apply Mode")
+    act_ok = Button(SM_frame, height = 2, width = 15, command=lambda:sys_mode(mode_button['text']), text="Apply Mode")
     mode_button.pack(padx=(50,50), pady=(30,20))
     act_ok.pack(pady=(0,30))
     
@@ -282,8 +314,9 @@ def slider_thread():
                 tm2 = tm2_entry.get()
                 act_comms(win, t_entry, s_entry, br_entry, tm1_entry, tm2_entry)
             time.sleep(0.1)
-        except:
-            pass
+        except Exception as e:
+            print(e)
+            
         
 def main():
     global exit
