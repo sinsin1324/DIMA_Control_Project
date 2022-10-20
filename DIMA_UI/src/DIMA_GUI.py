@@ -11,6 +11,8 @@ import time
 from pygments import highlight
 import math
 
+PI = math.pi
+
 # Port where local module is connected to.
 PORT = "/dev/tty.usbserial-DN03133I"
 # Baud rate of local module.
@@ -43,7 +45,7 @@ deadzone_s = [5814, 6214]
 neg_rnge_s = neg_ends_s[1] - neg_ends_s[0]
 pos_rnge_s = pos_ends_s[1] - pos_ends_s[0]
 
-raw_rnge_b = [4992,7360]
+raw_rnge_b = [4992,8060]
 rnge_b = raw_rnge_b[1] - raw_rnge_b[0]
 center_b = raw_rnge_b[0] + raw_rnge_b[1] / 2
 
@@ -72,11 +74,8 @@ def servo_b_conversion(percentage):
     global rnge_b
     return (int)(((percentage+100)/200 * rnge_b) + 4992)
 
-def tm1_conversion(percentage):
-    return percentage
-
-def tm2_conversion(percentage):
-    return percentage
+def tm_conversion(percentage):
+    return round(percentage/180 * PI, 2)
 
 def send_data(BITS_TO_SEND):
     device.send_data(remote_device, BITS_TO_SEND)
@@ -100,18 +99,21 @@ def sys_mode(m):
     }
 
     mode_num = mode_dict[m]
-    DATA_TO_SEND  = mode_num
-    manual_mode = mode_num
+    if mode_num == 1:                                       # To be Removed when Auto Has Functionality
+        pass
+    else:
+        DATA_TO_SEND  = mode_num
+        manual_mode = mode_num
 
-    send_header()
-    
-    BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
-    send_data(BITS_TO_SEND)
-
-    if m in ["Manual Mode", "Control Mode"]:
-        CLASS = 0x0001
-        SIZE = 4
         send_header()
+        
+        BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
+        send_data(BITS_TO_SEND)
+
+        if m in ["Manual Mode", "Control Mode"]:
+            CLASS = 0x0001
+            SIZE = 4
+            send_header()
     
 
 def sys_mode_change(b):
@@ -161,10 +163,10 @@ def act_comms(AC, t, s, br, tm1, tm2):
     if manual_mode != 1:
         BITS_TO_SEND = struct.pack('fffff', servo_s_conversion(t_val),
             servo_s_conversion(s_val), servo_b_conversion(br_val),
-            tm1_conversion(tm1_val), tm2_conversion(tm2_val))
+            tm_conversion(tm1_val), tm_conversion(tm2_val))
         send_data(BITS_TO_SEND)
         print(servo_s_conversion(t_val), servo_s_conversion(s_val), 
-        servo_b_conversion(br_val), tm1_conversion(tm1_val), tm2_conversion(tm2_val))
+        servo_b_conversion(br_val), tm_conversion(tm1_val), tm_conversion(tm2_val))
     else:
         missing_warning(AC)
         
@@ -260,9 +262,9 @@ def usr_thread():
     s_entry.grid(row=2, column=1)
     br_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     br_entry.grid(row=3, column=1)
-    tm1_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
+    tm1_entry = Scale(AC_frame, from_=-90, to=90, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     tm1_entry.grid(row=4, column=1)
-    tm2_entry = Scale(AC_frame, from_=-100, to=100, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
+    tm2_entry = Scale(AC_frame, from_=-90, to=90, orient=HORIZONTAL, length=200, highlightthickness=1, bg="#ffac81")
     tm2_entry.grid(row=5, column=1)
     # percentage labels for each actuator
     percent1 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
@@ -271,9 +273,9 @@ def usr_thread():
     percent2.grid(row=2, column=2, sticky=W)
     percent3 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     percent3.grid(row=3, column=2, sticky=W)
-    percent4 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
+    percent4 = Label(AC_frame, text = "deg", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     percent4.grid(row=4, column=2, sticky=W)
-    percent5 = Label(AC_frame, text = "%", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
+    percent5 = Label(AC_frame, text = "deg", font=("Courier", 18), highlightbackground="#ffac81", bg="#ffac81")
     percent5 .grid(row=5, column=2, sticky=W)
     act2_ok = Button(AC_frame, height = 2, width = 18, command=lambda:sys_mode_and_change(mode_button, t_entry, br_entry, s_entry, tm1_entry, tm2_entry), text="Safely Enter Rest Mode", highlightbackground="red")
     act2_ok.grid(row=6, column=0, columnspan=3)
