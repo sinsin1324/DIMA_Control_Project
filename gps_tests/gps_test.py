@@ -8,8 +8,8 @@ with serial.Serial('/dev/gps2', baudrate=9600, timeout=1) as ser:
         line = ser.readline()   # read a '\n' terminated line
         print(line)
         line = line.decode()
-        if 'GNVTG' not in line:
-            continue
+        while 'GNVTG' not in line:
+            pass
 
         line = line.split(',')
 

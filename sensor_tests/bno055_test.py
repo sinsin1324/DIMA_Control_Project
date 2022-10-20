@@ -1,6 +1,5 @@
 import adafruit_bno055
 import board
-import busio
 import time
 bno55=0x28
 
@@ -32,5 +31,4 @@ if __name__ == "__main__":
     time.sleep(2)
     st = time.time()
     print("Started")
-    prin()  
-    print(time.time()-st)
+    prin()

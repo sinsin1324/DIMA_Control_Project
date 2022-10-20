@@ -7,19 +7,28 @@ from threading import Thread
 import maestro
 import serial
 from datetime import datetime
+import adafruit_bno055
+import board
+import busio
 # from pyspectator.temperature_reader import TemperatureReader
+
+i2c = board.I2C()
 
 # Ports
 XBEE_PORT = "/dev/ttyUSB0"
 TEENSY_PORT = "/dev/ttyACM0"
+GPS_PORT = "/dev/gps2"
 
 # Baud Rates
 XBEE_BAUD_RATE = 230400
 TEENSY_BAUD_RATE = 115200
+GPS_BAUD_RATE = 115200
 
 # Initialize XBee and Teensy
 xbee_device = XBeeDevice(XBEE_PORT, XBEE_BAUD_RATE)
-# teensy = serial.Serial(TEENSY_PORT, TEENSY_BAUD_RATE)            !!!!!!!!!!!!!!!!!!!
+# teensy = serial.Serial(TEENSY_PORT, TEENSY_BAUD_RATE)            #!!!!!!!!!!!!!!!!!!!
+GPS = serial.Serial(GPS_PORT, GPS_BAUD_RATE)
+IMU_SENSOR = adafruit_bno055.BNO055_I2C(i2c)
 
 # Maestro Initialisation
 servo = maestro.Controller()
@@ -57,23 +66,23 @@ tail2_pos = 0
 
 # Motor ID; Motor State; Command Position; Command Velocity; Command Kp;
 # Command Kd; Command Current; ...(repeat for motor 2); Logbit
-# 1;0;0;0;0;0;0;2;0;0;0;0;0;0;0 - Exit Motor Control
-# 1;1;0;0;0;0;0;2;1;0;0;0;0;0;0 - Enter Motor Control
-# 1;2;0;0;0;0;0;2;2;0;0;0;0;0;0 - Set Origin Position
-# 1;3;0;0;3;2;0;2;3;0;0;3;2;0;0 - Simple Impediance Control
-# 1;3;1;0;1;0;0;2;3;1;0;1;0;0;0 - Simple Position Control
-# 1;3;0;1;0;1;0;2;3;0;1;0;1;0;0 - Simple Velocity Control
-EXIT_MOTOR_CONTROL = "1;0;0;0;0;0;0;2;0;0;0;0;0;0;0|"
-ENTER_MOTOR_CONTROL = "1;1;0;0;0;0;0;2;1;0;0;0;0;0;0|"
-SET_ORIGIN_POSITION = "1;2;0;0;0;0;0;2;2;0;0;0;0;0;0|"
+# 1;0;0;0;0;0;0;2;0;0;0;0;0;0 - Exit Motor Control
+# 1;1;0;0;0;0;0;2;1;0;0;0;0;0 - Enter Motor Control
+# 1;2;0;0;0;0;0;2;2;0;0;0;0;0 - Set Origin Position
+# 1;3;0;0;3;2;0;2;3;0;0;3;2;0 - Simple Impediance Control
+# 1;3;1;0;1;0;0;2;3;1;0;1;0;0 - Simple Position Control
+# 1;3;0;1;0;1;0;2;3;0;1;0;1;0 - Simple Velocity Control
+EXIT_MOTOR_CONTROL = "1;0;0;0;0;0;0;2;0;0;0;0;0;0|"
+ENTER_MOTOR_CONTROL = "1;1;0;0;0;0;0;2;1;0;0;0;0;0|"
+SET_ORIGIN_POSITION = "1;2;0;0;0;0;0;2;2;0;0;0;0;0|"
 
-tail_command = [1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0]
+tail_command = [1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0]
 
-# def init_teensy():                                                !!!!!!!!!!!!!!!!!!!
-    # global teensy
-    # teensy.write(EXIT_MOTOR_CONTROL)
-    # teensy.write(ENTER_MOTOR_CONTROL)
-    # teensy.write(SET_ORIGIN_POSITION)
+# def init_teensy():                                                #!!!!!!!!!!!!!!!!!!!
+#     global teensy
+#     teensy.write(EXIT_MOTOR_CONTROL.encode())
+#     teensy.write(ENTER_MOTOR_CONTROL.encode())
+#     teensy.write(SET_ORIGIN_POSITION.encode())
 
 def servo_s_conversion(percentage):
     return ((percentage+100)/200 * rnge_s) + 4032
@@ -88,7 +97,30 @@ def servo_b_conversion(percentage):
 #     for c in 13:
 #         msg += str(tail_command[c]) + ";"
 #     msg += str(tail_command[13]) + "|"
-#     teensy.write(msg)
+#     teensy.write(msg.encode())
+
+#Decode gps data from serial port
+def get_gps_data():
+    global GPS
+    gps_data = GPS.readline().decode()
+    while 'VTG' not in gps_data:
+        gps_data = GPS.readline().decode()
+    line = gps_data.split(',')
+    return line[6] + "," + line[8]
+
+def get_imu_data():
+    global IMU_SENSOR
+    data = ""
+    data += str(IMU_SENSOR.euler[0]) + ","
+    data += str(IMU_SENSOR.euler[1]) + ","
+    data += str(IMU_SENSOR.euler[2]) + ","
+    data += str(IMU_SENSOR.linear_acceleration[0]) + ","
+    data += str(IMU_SENSOR.linear_acceleration[1]) + ","
+    data += str(IMU_SENSOR.linear_acceleration[2]) + ","
+    data += str(IMU_SENSOR.gyro[0]) + ","
+    data += str(IMU_SENSOR.gyro[1]) + ","
+    data += str(IMU_SENSOR.gyro[2])
+    return data
 
 def data_receive_callback(xbee_message):
     global header, CLASS, SIZE, manual_data
@@ -140,7 +172,7 @@ def data_receive_callback(xbee_message):
 def manual_control(data):
     global servo, target, steer_pos, \
     thrust_pos, break_pos, tail1_pos, tail2_pos
-    data = list(int (x) for x in data)
+    data = list(int (x) for x in data)[:3] + list(data)[3:5]
     servos = [data[0], data[1], data[2]]
     for x in range(3):
         servo.setTarget(channel0+x, servos[x])
@@ -173,7 +205,7 @@ def auto_control():
             servo.setTarget(channel0+x, servos[x])
         tail_command[2] = data[3]
         tail_command[9] = data[4]
-        # send_to_teensy()                                     !!!!!!!!!!!!!!!!!!!
+        # send_to_teensy()                                     #!!!!!!!!!!!!!!!!!!!
         time.sleep(0.1)
     
     
@@ -182,7 +214,7 @@ def control_loop_control(data):
     global servo, target, steer_pos, \
     thrust_pos, break_pos, tail1_pos, tail2_pos
 
-    data = list(data)
+    data = list(int (x) for x in data)[:3] + list(data)[3:5]
     servos = [data[0], data[1], data[2]]
     for x in range(3):
         servo.setTarget(channel0+x, servos[x])
@@ -200,7 +232,7 @@ def rest_control(placeholder):
         servo.setTarget(channel0+x, data[x])
     tail_command[2] = data[3]
     tail_command[9] = data[4]
-    # send_to_teensy()                                          !!!!!!!!!!!!!!!!!!!
+    # send_to_teensy()                                          #!!!!!!!!!!!!!!!!!!!
     time.sleep(2)
     for x in range(3):
         servo.setSpeed(channel0+x, 0)
@@ -223,14 +255,19 @@ def logger_thread():
     log_frequency = 20
     current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logfile = open("../data/logs/" + current_datetime + ".csv", "w")
+    logfile.write("steer_pos,thrust_pos,break_pos,tail1_pos,tail2_pos\n")
+    log_array = []
     while logging_status:
         # get linux cpu temperature
         # cpu_temp = subprocess.check_output(
         #     "cat /sys/class/thermal/thermal_zone0/temp", shell=True)
-        logfile.write(datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ",")
+        # log_array.append(datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ",")
         for y in range(log_frequency):
-            logfile.write(str(steer_pos) + "," + str(thrust_pos) + "," + 
-            str(break_pos) + "," + str(tail1_pos) + "," + str(tail2_pos))
+            log_array.append(datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + "," + str(steer_pos) + "," 
+            + str(thrust_pos) + "," + str(break_pos) + "," + "str(tail1_pos)" + "," + "str(tail2_pos))" 
+            + "," + get_gps_data() + "," + get_imu_data())
+        for line in log_array:
+            logfile.write(line + "\n")
     logfile.close()
 
 def toggle_logging(placeholder):
@@ -259,7 +296,7 @@ class_dict = {0x0:operating_mode,
               0x5:toggle_logging,}
 
 def main():
-    global channel0, servo, xbee_device # , teensy                  !!!!!!!!!!!!!!!!!!!
+    global channel0, servo, xbee_device #, teensy                  !!!!!!!!!!!!!!!!!!!
     print(" +-----------------------------------------+")
     print(" |        Jetson Receive Data Sample       |")
     print(" +-----------------------------------------+\n")
@@ -269,7 +306,7 @@ def main():
     servo.setSpeed(channel0, 0)  # set speed of servo 0
 
     # Initialise tail motors
-    # init_teensy()                                                 !!!!!!!!!!!!!!!!!!!
+    # init_teensy()                                                 #!!!!!!!!!!!!!!!!!!!
 
     try:
         xbee_device.open()
@@ -286,7 +323,7 @@ def main():
         if xbee_device is not None and xbee_device.is_open():
             xbee_device.close()
         # exit teensy motor control mode
-        # teensy.close()                                            !!!!!!!!!!!!!!!!!!!
+        # teensy.close()                                            #!!!!!!!!!!!!!!!!!!!
         servo.close()
         print("\nSafely closed")
 
