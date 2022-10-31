@@ -84,3 +84,10 @@ OpenCV installation for no bugs:
 https://github.com/AastaNV/JEP/blob/master/script/install_opencv4.5.0_Jetson.sh
 
 RUN ALL PYTHON FILES WITH PYTHON3.7
+
+Installing PyTorch
+Install CMake 3.23.4 (build from source with prefix=/usr, make and make install)y needs openssl:
+sudo apt-get install libssl-dev
+Then, follow
+qengineering.eu/install-pytorch-on-jetson-nano.html
+Build from source

@@ -40,14 +40,14 @@ raw_rnge_s = [7994, 4032]
 rnge_s = raw_rnge_s[1] - raw_rnge_s[0]
 neg_ends_s = [4032, 5814]
 pos_ends_s = [6214, 7996]
-center_s = raw_rnge_s[0] + raw_rnge_s[1] / 2
+center_s = (raw_rnge_s[0] + raw_rnge_s[1]) / 2
 deadzone_s = [5814, 6214]
 neg_rnge_s = neg_ends_s[1] - neg_ends_s[0]
 pos_rnge_s = pos_ends_s[1] - pos_ends_s[0]
 
 raw_rnge_b = [4992,8060]
 rnge_b = raw_rnge_b[1] - raw_rnge_b[0]
-center_b = raw_rnge_b[0] + raw_rnge_b[1] / 2
+center_b = (raw_rnge_b[0] + raw_rnge_b[1]) / 2
 
 
 def init_Xbee():
@@ -133,9 +133,9 @@ def sys_mode_and_change(b, t_entry, br_entry, s_entry, tm1_entry, tm2_entry):
     
     BITS_TO_SEND = struct.pack('fffff',-10000,-10000,-10000,-10000,-10000)
     send_data(BITS_TO_SEND)
-    time.sleep(0.1)
+    time.sleep(0.5)
     send_header()
-
+    time.sleep(0.1)
     DATA_TO_SEND = 0b11
     BITS_TO_SEND = struct.pack('B', DATA_TO_SEND)
     send_data(BITS_TO_SEND)
@@ -317,7 +317,7 @@ def slider_thread():
                 act_comms(win, t_entry, s_entry, br_entry, tm1_entry, tm2_entry)
             time.sleep(0.1)
         except Exception as e:
-            print(e)
+            print("Hello Exception here")
             
         
 def main():
