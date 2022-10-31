@@ -102,11 +102,18 @@ def servo_b_conversion(percentage):
 #Decode gps data from serial port
 def get_gps_data():
     global GPS
-    gps_data = GPS.readline().decode()
-    while 'VTG' not in gps_data:
-        gps_data = GPS.readline().decode()
-    line = gps_data.split(',')
-    return line[6] + "," + line[8]
+    vtg_data = GPS.readline().decode()
+    gll_data = GPS.readline().decode()
+    while 'VTG' not in vtg_data:
+        vtg_data = GPS.readline().decode()
+    while 'GLL' not in gll_data:
+        gll_data = GPS.readline().decode()
+    vtg_line = vtg_data.split(',')
+    gll_line = gll_data.split(',')
+    # print(line[6]+ " " + line[8])
+    
+    return vtg_line[5] + "," + vtg_line[7] + "," + gll_line[1] + \
+    "," + gll_line[2]+ "," + gll_line[3] + "," + gll_line[4]
 
 def get_imu_data():
     global IMU_SENSOR
@@ -179,7 +186,7 @@ def manual_control(data):
     tail_command[2] = data[3]
     tail_command[9] = data[4]
     # send_to_teensy()                                              !!!!!!!!!!!!!!!!!!!
-    steer_pos, thrust_pos, break_pos, tail1_pos, tail2_pos = data
+    thrust_pos, steer_pos, break_pos, tail1_pos, tail2_pos = data
     print(data)
     
 # Read control commands from file and execute them accordingly    
@@ -219,7 +226,7 @@ def control_loop_control(data):
     for x in range(3):
         servo.setTarget(channel0+x, servos[x])
     
-    steer_pos, thrust_pos, break_pos, tail1_pos, tail2_pos = data
+    thrust_pos, steer_pos, break_pos, tail1_pos, tail2_pos = data
     print(data)
     
 def rest_control(placeholder):
@@ -236,7 +243,7 @@ def rest_control(placeholder):
     time.sleep(2)
     for x in range(3):
         servo.setSpeed(channel0+x, 0)
-    steer_pos, thrust_pos, break_pos, tail1_pos, tail2_pos = data
+    thrust_pos, steer_pos, break_pos, tail1_pos, tail2_pos = data
     
         
 def kill():
@@ -255,15 +262,17 @@ def logger_thread():
     log_frequency = 20
     current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logfile = open("../data/logs/" + current_datetime + ".csv", "w")
-    logfile.write("steer_pos,thrust_pos,break_pos,tail1_pos,tail2_pos\n")
-    log_array = []
+    logfile.write("time,steer_pos,thrust_pos,break_pos,tail1_pos,tail2_pos,vtg_knots,vtg_km,\
+        gll,S/N,gll2,E/W,euler0,euler1,euler2,lin_acc0,lin_acc1mlin_acc2,gyro0,gyro1,gyro2\n")
     while logging_status:
+        log_array = []
         # get linux cpu temperature
         # cpu_temp = subprocess.check_output(
         #     "cat /sys/class/thermal/thermal_zone0/temp", shell=True)
-        # log_array.append(datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ",")
+        log_array.append(datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))
+        # datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + "," +
         for y in range(log_frequency):
-            log_array.append(datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + "," + str(steer_pos) + "," 
+            log_array.append(str(steer_pos) + "," 
             + str(thrust_pos) + "," + str(break_pos) + "," + "str(tail1_pos)" + "," + "str(tail2_pos))" 
             + "," + get_gps_data() + "," + get_imu_data())
         for line in log_array:
