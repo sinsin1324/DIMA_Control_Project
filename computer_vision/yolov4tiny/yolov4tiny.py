@@ -44,7 +44,7 @@ def gstreamer_pipeline(
 
 def object_detect():
     window_title = "YOLOv4 Tiny Collision Detection"
-    net = cv2.dnn.readNet("yolov4-tiny.weights", "yolov4-tiny.cfg")
+    net = cv2.dnn.readNet("yolov4-p5.weights", "yolov4-p5.cfg")
     model = cv2.dnn_DetectionModel(net)
 
     classes = []
@@ -53,7 +53,7 @@ def object_detect():
             class_name = class_name.strip()
             classes.append(class_name)
 
-    model.setInputParams(size=(160, 160), scale=1/255)
+    model.setInputParams(size=(96, 96), scale=1/255)
 
     video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
     if video_capture.isOpened():
@@ -62,7 +62,7 @@ def object_detect():
             while True:
                 ret, frame = video_capture.read()
                 (class_ids, scores, boxes) = model.detect(frame)
-
+                print(class_ids)
                 for class_id, score, box in zip(class_ids, scores, boxes):
                     x, y, w, h = box
                     print(class_id)
