@@ -44,7 +44,7 @@ def gstreamer_pipeline(
 
 def object_detect():
     window_title = "YOLOv4 Tiny Collision Detection"
-    net = cv2.dnn.readNet("yolov4tiny.weights", "yolov4-tiny.cfg")
+    net = cv2.dnn.readNet("yolov4-tiny.weights", "yolov4-tiny.cfg")
     model = cv2.dnn_DetectionModel(net)
 
     classes = []
