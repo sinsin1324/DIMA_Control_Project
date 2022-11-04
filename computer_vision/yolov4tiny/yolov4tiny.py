@@ -53,7 +53,7 @@ def object_detect():
             class_name = class_name.strip()
             classes.append(class_name)
 
-    model.setInputParams(size=(128, 128), scale=1/255)
+    model.setInputParams(size=(160, 160), scale=1/255)
 
     video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
     if video_capture.isOpened():
