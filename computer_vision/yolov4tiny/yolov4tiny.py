@@ -63,9 +63,9 @@ def object_detect():
                 ret, frame = video_capture.read()
                 (class_ids, scores, boxes) = model.detect(frame)
 
-		for class_id, score, box in zip(class_ids, scores, boxes):
+                for class_id, score, box in zip(class_ids, scores, boxes):
                     x, y, w, h = box
-                    cv2.putTest(frame, classes[class_id], (x, y-5), cv2.FONT_HERSHEY_PLAIN, 1, (200, 0, 20)
+                    cv2.putTest(frame, classes[class_id], (x, y-5), cv2.FONT_HERSHEY_PLAIN, 1, (200, 0, 20))
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (200, 0, 20), 2)
 
                 if cv2.getWindowProperty(window_title, cv2.WND_PROP_AUTOSIZE) >= 0:
