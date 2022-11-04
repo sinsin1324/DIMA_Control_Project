@@ -65,7 +65,7 @@ def object_detect():
 
                 for class_id, score, box in zip(class_ids, scores, boxes):
                     x, y, w, h = box
-                    cv2.putText(frame, classes[class_id[0]], (x, y-5), cv2.FONT_HERSHEY_PLAIN, 1, (200, 0, 20), 2)
+                    cv2.putText(frame, classes[[class_id,]], (x, y-5), cv2.FONT_HERSHEY_PLAIN, 1, (200, 0, 20), 2)
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (100, 0, 20), 2)
 
                 if cv2.getWindowProperty(window_title, cv2.WND_PROP_AUTOSIZE) >= 0:
