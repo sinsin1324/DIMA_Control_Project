@@ -46,7 +46,7 @@ def object_detect():
     window_title = "YOLOv4 Tiny Collision Detection"
     net = cv2.dnn.readNet("yolov4-tiny.weights", "yolov4-tiny.cfg")
     model = cv2.dnn_DetectionModel(net)
-
+    model.conf = 0.4
     classes = []
     with open("classes.txt", "r") as c:
         for class_name in c.readlines():
