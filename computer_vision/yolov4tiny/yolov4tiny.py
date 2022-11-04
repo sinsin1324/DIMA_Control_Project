@@ -14,6 +14,7 @@ import cv2
 # display_width and display_height determine the size of the window on the screen
 # Notice that we drop frames if we fall outside the processing time in the appsink element
 
+
 def gstreamer_pipeline(
     capture_width=1920,
     capture_height=1080,
@@ -41,35 +42,37 @@ def gstreamer_pipeline(
     )
 
 
-def face_detect():
+def object_detect():
     window_title = "YOLOv4 Tiny Collision Detection"
-    net = cv2.dnn.readNet()
+    net = cv2.dnn.readNet("yolov4tiny.weights", "yolov4-tiny.cfg")
+    model = cv2.dnn_DetectionModel(net)
+
+    classes = []
+    with open("classes.txt", "r") as c:
+        for class_name in c.readlines():
+            class_name = class_name.strip()
+            classes.append(class_name)
+
+    model.setInputParams(size=(96, 96), scale=1/255)
+
     video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
     if video_capture.isOpened():
         try:
             cv2.namedWindow(window_title, cv2.WINDOW_AUTOSIZE)
             while True:
                 ret, frame = video_capture.read()
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+                (class_ids, scores, boxes) = model.detect(frame)
 
-                for (x, y, w, h) in faces:
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                    roi_gray = gray[y : y + h, x : x + w]
-                    roi_color = frame[y : y + h, x : x + w]
-                    eyes = eye_cascade.detectMultiScale(roi_gray)
-                    for (ex, ey, ew, eh) in eyes:
-                        cv2.rectangle(
-                            roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2
-                        )
-                # Check to see if the user closed the window
-                # Under GTK+ (Jetson Default), WND_PROP_VISIBLE does not work correctly. Under Qt it does
-                # GTK - Substitute WND_PROP_AUTOSIZE to detect if window has been closed by user
+		for class_id, score, box in zip(class_ids, scores, boxes):
+                    x, y, w, h = box
+                    cv2.putTest(frame, classes[class_id], (x, y-5), cv2.FONT_HERSHEY_PLAIN, 1, (200, 0, 20)
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (200, 0, 20), 2)
+
                 if cv2.getWindowProperty(window_title, cv2.WND_PROP_AUTOSIZE) >= 0:
                     cv2.imshow(window_title, frame)
                 else:
                     break
-                keyCode = cv2.waitKey(10) & 0xFF
+                keyCode=cv2.waitKey(10) & 0xFF
                 # Stop the program on the ESC key or 'q'
                 if keyCode == 27 or keyCode == ord('q'):
                     break
@@ -81,4 +84,4 @@ def face_detect():
 
 
 if __name__ == "__main__":
-    face_detect()
+    object_detect()
