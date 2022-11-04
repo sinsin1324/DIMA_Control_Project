@@ -7,7 +7,7 @@
 # Data files are in /usr/sharc/OpenCV
 
 import cv2
-
+import numpy as np
 # gstreamer_pipeline returns a GStreamer pipeline for capturing from the CSI camera
 # Defaults to 1920x1080 @ 30fps
 # Flip the image by setting the flip_method (most common values: 0 and 2)
@@ -65,7 +65,6 @@ def object_detect():
 
                 for class_id, score, box in zip(class_ids, scores, boxes):
                     x, y, w, h = box
-                    print(classes.shape)
                     cv2.putText(frame, classes[class_id], (x, y-5), cv2.FONT_HERSHEY_PLAIN, 1, (200, 0, 20), 2)
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (200, 0, 20), 2)
 
